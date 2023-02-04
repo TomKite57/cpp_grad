@@ -12,6 +12,8 @@ int main()
 
     auto d = a + b;
 
+    d.backward();
+
     std::cout << a << "\n"
               << b << "\n"
               << c << "\n"
