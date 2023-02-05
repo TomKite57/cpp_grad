@@ -30,7 +30,7 @@ class Value
 
         auto _back = [&]()
         {
-            val._grad += (exp * std::pow(val._data, exp-1.0)) * out._grad;
+            val._grad += (exp * std::pow(val._data, exp- static_cast<T>(1))) * out._grad;
         };
         out._backward = _back;
 
@@ -70,7 +70,7 @@ public:
     T get_grad() const { return _grad; }
     std::vector<std::shared_ptr<Value<T>>> get_parent_ptrs() { return _parents; }
 
-    void zero_grad(){ _grad = 0; }
+    void zero_grad(){ _grad = static_cast<T>(0); }
 
     void backward()
     {
@@ -78,7 +78,7 @@ public:
         auto order = build_topo(this);
 
         // Set dx/dx=1
-        _grad = 1.0;
+        _grad = static_cast<T>(1);
         for (auto n=order.rbegin(); n!=order.rend(); ++n)
         {
             (*n)->_backward();
@@ -156,7 +156,7 @@ public:
 
     Value<T> operator/(Value<T>& other)
     {
-        auto temp = pow(other, -1.0);
+        auto temp = pow(other, static_cast<T>(-1));
         return operator*(temp);
     }
 
@@ -168,7 +168,7 @@ public:
 
     Value<T> operator-()
     {
-        return operator*(-1.0);
+        return operator*(static_cast<T>(-1));
     }
 };
 

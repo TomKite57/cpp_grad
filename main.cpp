@@ -6,12 +6,14 @@
 
 int main()
 {
-    auto a = Value<double>(2.0);
-    auto b = Value<double>(-3.0);
-    auto c = Value<double>(10.0);
+    using TYPE = double;
+
+    auto a = Value<TYPE>(2.0);
+    auto b = Value<TYPE>(-3.0);
+    auto c = Value<TYPE>(10.0);
     auto e = a * b;
     auto d = e + c;
-    auto f = Value<double>(-2.0);
+    auto f = Value<TYPE>(-2.0);
     auto L = d * f;
 
     L.backward();
