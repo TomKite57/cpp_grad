@@ -10,7 +10,8 @@ int main()
     auto b = Value<double>(-3.0);
     auto c = Value<double>(10.0);
 
-    auto d = a + b;
+    auto d = 3.0 + a;
+
 
     d.backward();
 

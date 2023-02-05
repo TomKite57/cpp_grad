@@ -23,6 +23,8 @@ class Value
         return os;
     }
 
+    template <class C>
+
 private:
     T _data{0};
     T _grad{0};
@@ -37,6 +39,8 @@ private:
 
 public:
     Value(T data): _data{data} {}
+    Value(Value&) = default;
+    ~Value() = default;
 
     T get_data() const { return _data; }
     T get_grad() const { return _grad; }
@@ -71,6 +75,32 @@ public:
         return out;
     }
 
+    Value<T> operator+(T other)
+    {
+        auto temp = Value<T>(other);
+        return operator+(temp);
+    }
+
+    Value<T> operator-(Value<T>& other)
+    {
+        auto out = Value<T>(_data - other._data, {this, &other}, PLUS);
+
+        auto _back = [&]()
+        {
+            _grad += out._grad;
+            other._grad += out._grad;
+        };
+        out._backward = _back;
+
+        return out;
+    }
+
+    Value<T> operator-(T other)
+    {
+        auto temp = Value<T>(other);
+        return operator-(temp);
+    }
+
     Value<T> operator*(Value<T>& other)
     {
         auto out = Value<T>(_data * other._data, {this, &other}, TIMES);
@@ -84,6 +114,17 @@ public:
 
         return out;
     }
+
+    Value<T> operator*(T other)
+    {
+        auto temp = Value<T>(other);
+        return operator*(temp);
+    }
+
+    //Value<T> operator-()
+    //{
+    //    return (*this) * -1;
+    //}
 };
 
 template<class T>
