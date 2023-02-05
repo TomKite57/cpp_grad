@@ -42,6 +42,24 @@ class Value
         return val + num;
     }
 
+    template <class C>
+    friend Value<C> operator-(C num, Value<C>& val)
+    {
+        return val - num;
+    }
+
+    template <class C>
+    friend Value<C> operator*(C num, Value<C>& val)
+    {
+        return val * num;
+    }
+
+    template <class C>
+    friend Value<C> operator/(C num, Value<C>& val)
+    {
+        return val / num;
+    }
+
 private:
     T _data{0};
     T _grad{0};
@@ -135,6 +153,23 @@ public:
     {
         auto temp = Value<T>(other);
         return operator*(temp);
+    }
+
+    Value<T> operator/(Value<T>& other)
+    {
+        auto temp = pow(other, -1.0);
+        return operator*(temp);
+    }
+
+    Value<T> operator/(T other)
+    {
+        auto temp = Value<T>(other);
+        return operator/(temp);
+    }
+
+    Value<T> operator-()
+    {
+        return operator*(-1.0);
     }
 };
 
