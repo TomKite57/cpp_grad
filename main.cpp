@@ -8,10 +8,11 @@ int main()
 {
     auto a = Value<double>(2.0);
     auto b = Value<double>(-3.0);
-    auto c = Value<double>(10.0);
+    //auto c = Value<double>(10.0);
+    auto c = a * b;
 
-    auto d = 3.0 + a;
-
+    auto d = pow(c, 3.0);
+    //auto d = c * 3.0;
 
     d.backward();
 

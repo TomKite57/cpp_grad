@@ -1,10 +1,9 @@
 
 #include<iostream>
+#include<cmath>
 #include<utility>
 #include<functional>
 #include<set>
-
-enum operation {PLUS, MINUS, TIMES, DIVIDE};
 
 const std::function<void()> do_nothing = [](){return;};
 
@@ -24,17 +23,28 @@ class Value
     }
 
     template <class C>
+    friend Value<C> pow(Value<C>& val, C exp)
+    {
+        auto out = Value(std::pow(val._data, exp), {&val,});
+
+        auto _back = [&]()
+        {
+            val._grad += (exp * std::pow(val._data, exp-1.0)) * out._grad;
+        };
+        out._backward = _back;
+
+        return out;
+    }
 
 private:
     T _data{0};
     T _grad{0};
     std::vector<Value<T>*> _parents;
-    operation _op;
     std::function<void()> _backward = do_nothing;
 
 
-    Value(T data, std::vector<Value<T>*> parents, operation op):
-    _data{data}, _parents{parents}, _op{op}
+    Value(T data, std::vector<Value<T>*> parents):
+    _data{data}, _parents{parents}
     {}
 
 public:
@@ -63,7 +73,7 @@ public:
 
     Value<T> operator+(Value<T>& other)
     {
-        auto out = Value<T>(_data + other._data, {this, &other}, PLUS);
+        auto out = Value<T>(_data + other._data, {this, &other});
 
         auto _back = [&]()
         {
@@ -83,7 +93,7 @@ public:
 
     Value<T> operator-(Value<T>& other)
     {
-        auto out = Value<T>(_data - other._data, {this, &other}, PLUS);
+        auto out = Value<T>(_data - other._data, {this, &other});
 
         auto _back = [&]()
         {
@@ -103,7 +113,7 @@ public:
 
     Value<T> operator*(Value<T>& other)
     {
-        auto out = Value<T>(_data * other._data, {this, &other}, TIMES);
+        auto out = Value<T>(_data * other._data, {this, &other});
 
         auto _back = [&]()
         {
@@ -120,11 +130,6 @@ public:
         auto temp = Value<T>(other);
         return operator*(temp);
     }
-
-    //Value<T> operator-()
-    //{
-    //    return (*this) * -1;
-    //}
 };
 
 template<class T>
