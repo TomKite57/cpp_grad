@@ -2,6 +2,7 @@
 #include<iostream>
 
 #include "src/value.hpp"
+#include "src/module.hpp"
 
 
 int main()

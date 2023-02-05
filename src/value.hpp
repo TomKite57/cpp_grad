@@ -52,7 +52,6 @@ class Value
 private:
     T _data{0};
     T _grad{0};
-    //std::vector<Value<T>*> _parents;
     std::vector<std::shared_ptr<Value<T>>> _parents;
     std::function<void()> _backward = do_nothing;
 
@@ -74,7 +73,6 @@ public:
 
     void backward()
     {
-        //auto order = topological_sort(*this);
         auto order = build_topo(this);
 
         // Set dx/dx=1
@@ -181,7 +179,7 @@ std::vector<Value<T>*> build_topo(Value<T>* root)
     return rval;
 }
 
-// Make class for encapsulation
+// [TODO] Make class for encapsulation
 template<class T>
 void _build_topo(Value<T>* node, std::set<Value<T>*>& visited, std::vector<Value<T>*>& order)
 {
