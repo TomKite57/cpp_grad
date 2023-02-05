@@ -4,6 +4,7 @@
 #include<utility>
 #include<functional>
 #include<set>
+#include<memory>
 
 const std::function<void()> do_nothing = [](){return;};
 
@@ -25,7 +26,7 @@ class Value
     template <class C>
     friend Value<C> pow(Value<C>& val, C exp)
     {
-        auto out = Value(std::pow(val._data, exp), {&val,});
+        auto out = Value(std::pow(val._data, exp), {std::make_shared<Value<C>>(val),});
 
         auto _back = [&]()
         {
@@ -37,37 +38,26 @@ class Value
     }
 
     template <class C>
-    friend Value<C> operator+(C num, Value<C>& val)
-    {
-        return val + num;
-    }
+    friend Value<C> operator+(C num, Value<C>& val) {return val + num;}
 
     template <class C>
-    friend Value<C> operator-(C num, Value<C>& val)
-    {
-        return val - num;
-    }
+    friend Value<C> operator-(C num, Value<C>& val) {return val - num;}
 
     template <class C>
-    friend Value<C> operator*(C num, Value<C>& val)
-    {
-        return val * num;
-    }
+    friend Value<C> operator*(C num, Value<C>& val) {return val * num;}
 
     template <class C>
-    friend Value<C> operator/(C num, Value<C>& val)
-    {
-        return val / num;
-    }
+    friend Value<C> operator/(C num, Value<C>& val) {return val / num;}
 
 private:
     T _data{0};
     T _grad{0};
-    std::vector<Value<T>*> _parents;
+    //std::vector<Value<T>*> _parents;
+    std::vector<std::shared_ptr<Value<T>>> _parents;
     std::function<void()> _backward = do_nothing;
 
 
-    Value(T data, std::vector<Value<T>*> parents):
+    Value(T data, std::vector<std::shared_ptr<Value<T>>> parents):
     _data{data}, _parents{parents}
     {}
 
@@ -78,7 +68,7 @@ public:
 
     T get_data() const { return _data; }
     T get_grad() const { return _grad; }
-    std::vector<Value<T>*> get_parent_ptrs() { return _parents; }
+    std::vector<std::shared_ptr<Value<T>>> get_parent_ptrs() { return _parents; }
 
     void zero_grad(){ _grad = 0; }
 
@@ -97,7 +87,10 @@ public:
 
     Value<T> operator+(Value<T>& other)
     {
-        auto out = Value<T>(_data + other._data, {this, &other});
+        auto out = Value<T>(
+            _data + other._data,
+            {std::make_shared<Value<T>>(*this), std::make_shared<Value<T>>(other)}
+        );
 
         auto _back = [&]()
         {
@@ -117,7 +110,10 @@ public:
 
     Value<T> operator-(Value<T>& other)
     {
-        auto out = Value<T>(_data - other._data, {this, &other});
+        auto out = Value<T>(
+            _data - other._data,
+            {std::make_shared<Value<T>>(*this), std::make_shared<Value<T>>(other)}
+        );
 
         auto _back = [&]()
         {
@@ -137,7 +133,10 @@ public:
 
     Value<T> operator*(Value<T>& other)
     {
-        auto out = Value<T>(_data * other._data, {this, &other});
+        auto out = Value<T>(
+            _data * other._data,
+            {std::make_shared<Value<T>>(*this), std::make_shared<Value<T>>(other)}
+        );
 
         auto _back = [&]()
         {
@@ -191,6 +190,6 @@ void _build_topo(Value<T>* node, std::set<Value<T>*>& visited, std::vector<Value
 
     visited.insert(node);
     for (auto par_ptr : node->get_parent_ptrs())
-        _build_topo(par_ptr, visited, order);
+        _build_topo(par_ptr.get(), visited, order);
     order.push_back(node);
 }
