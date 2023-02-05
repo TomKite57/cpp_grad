@@ -36,6 +36,12 @@ class Value
         return out;
     }
 
+    template <class C>
+    friend Value<C> operator+(C num, Value<C>& val)
+    {
+        return val + num;
+    }
+
 private:
     T _data{0};
     T _grad{0};
