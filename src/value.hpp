@@ -1,4 +1,6 @@
 
+#pragma once
+
 #include<iostream>
 #include<cmath>
 #include<utility>
@@ -63,6 +65,7 @@ private:
 public:
     Value(T data): _data{data} {}
     Value(Value&) = default;
+    Value(Value&&) = default;
     ~Value() = default;
 
     T get_data() const { return _data; }

@@ -16,9 +16,9 @@ int main()
     auto d = e + c;
     auto f = Value<TYPE>(-2.0);
     auto L = d * f;
-
+    
     L.backward();
-
+    
     std::cout << a << "\n"
               << b << "\n"
               << c << "\n"
@@ -26,6 +26,14 @@ int main()
               << e << "\n"
               << f << "\n"
               << L << "\n";
+
+   /*
+    MLP<TYPE> model({2, 2, 2, 2});
+
+    std::vector<TYPE> input = {1, 1};
+    std::vector<TYPE> target = {1, 0};
+    auto loss = model.loss(input, target);
+    */
 
     return 0;
 }
