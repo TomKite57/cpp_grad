@@ -68,6 +68,9 @@ public:
     Value(Value&&) = default;
     ~Value() = default;
 
+    Value<T>& operator=(Value<T>& other) = default;
+    Value<T>& operator=(Value<T>&& other) = default;
+
     T get_data() const { return _data; }
     T get_grad() const { return _grad; }
     std::vector<std::shared_ptr<Value<T>>> get_parent_ptrs() { return _parents; }
@@ -190,7 +193,7 @@ void _build_topo(Value<T>* node, std::set<Value<T>*>& visited, std::vector<Value
         return;
 
     visited.insert(node);
-    for (auto par_ptr : node->get_parent_ptrs())
+    for (auto& par_ptr : node->get_parent_ptrs())
         _build_topo(par_ptr.get(), visited, order);
     order.push_back(node);
 }
