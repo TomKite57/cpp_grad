@@ -7,40 +7,37 @@
 
 int main()
 {
-    using TYPE = double;
-
-    auto a = Value<TYPE>(2.0);
-    auto b = Value<TYPE>(-3.0);
-    auto c = Value<TYPE>(10.0);
+    auto a = Value<double>(2.0);
+    auto b = Value<double>(-3.0);
+    auto c = Value<double>(10.0);
     auto e = a * b;
-    auto d = (e + c) * a;
-    auto f = Value<TYPE>(-2.0);
+    auto d = e + c;
+    auto f = Value<double>(-2.0);
     auto L = d * f;
 
-    //L = L * L;
-    
-    L.backward();
+    auto T = L*L;
 
-    for (auto& par : L.get_parent_ptrs())
-        std::cout << *par << " | " << par << std::endl;
+    //L = T;
+
+    T.backward();
+
+    std::cout << a << " | " << a.get_ptr() << "\n"
+              << b << " | " << b.get_ptr() << "\n"
+              << c << " | " << c.get_ptr() << "\n"
+              << d << " | " << d.get_ptr() << "\n"
+              << e << " | " << e.get_ptr() << "\n"
+              << f << " | " << f.get_ptr() << "\n"
+              << L << " | " << L.get_ptr() << "\n";
 
     std::cout << "\n";
 
-    auto order = build_topo(&L);
-    for (auto n=order.rbegin(); n!=order.rend(); ++n)
+    auto order = build_topo(T.get_ptr().get());
+    for (auto n=order.begin(); n!=order.end(); ++n)
     {
         std::cout << **n << " | " << *n << "\n";
     }
-
     std::cout << "\n";
-    
-    std::cout << a << " | " << &a << "\n"
-              << b << " | " << &b << "\n"
-              << c << " | " << &c << "\n"
-              << d << " | " << &d << "\n"
-              << e << " | " << &e << "\n"
-              << f << " | " << &f << "\n"
-              << L << " | " << &L << "\n\n";
+
     
     //for (auto& n : build_topo(&L))
     //    std::cout << *n << " | " << n << "\n";
