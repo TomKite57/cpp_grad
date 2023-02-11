@@ -22,7 +22,7 @@ int main()
 
     L = T;
 
-    auto order = build_topo(T.get_ptr().get());
+    auto order = T.build_topo();
     for (auto n=order.begin(); n!=order.end(); ++n)
         std::cout << **n << " | " << *n << "\n";
     std::cout << "\n";
