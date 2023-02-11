@@ -117,14 +117,14 @@ class Value
     template <class C>
     friend Value<C> pow(Value<C>& val, C exp)
     {
-        auto out = Value(std::pow(val.get_data(), exp), {std::make_shared<Value<C>>(val),});
+        auto out = Value(std::pow(val.get_data(), exp), {val.get_ptr(),});
 
         std::shared_ptr<_Value<T>>& val_ptr = val._ptr;
         std::shared_ptr<_Value<T>>& out_ptr = out._ptr;
 
         auto _back = [=]()
         {
-            val.get_grad() += (exp * std::pow(val_ptr->get_data(), exp- static_cast<T>(1))) * out_ptr->get_grad();
+            val_ptr->get_grad() += (exp * std::pow(val_ptr->get_data(), exp- static_cast<T>(1))) * out_ptr->get_grad();
         };
         out.set_backward(_back);
 
