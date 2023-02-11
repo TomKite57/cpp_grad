@@ -171,7 +171,7 @@ public:
     void backward(){ _ptr->backward(); }
     std::vector<_Value<T>*> build_topo(){ return _ptr->build_topo(); }
 
-    // [TODO] DEBUG ACCESSOR ONLY
+    // ptr accessor
     std::shared_ptr<_Value<T>> get_ptr() { return _ptr; }
 
     // Arithmetic operators

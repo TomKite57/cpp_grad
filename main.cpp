@@ -1,5 +1,6 @@
 
 #include<iostream>
+#include<cstdlib>
 
 #include "src/value.hpp"
 #include "src/module.hpp"
@@ -28,13 +29,21 @@ void sanity_check()
 
 int main()
 {
+    srand((unsigned) time(NULL));
+    
     //sanity_check();
 
-    MLP<double> model({2, 2, 2, 2});
+    Neuron<double> neuron(2);
+    std::vector<double> input = {4.7, 5.0};
+    auto val = neuron(input);
+    std::cout << val << std::endl;
 
-    std::vector<double> input = {1, 1};
-    std::vector<double> target = {1, 0};
-    auto loss = model.loss(input, target);
+
+    //MLP<double> model({2, 2, 2, 2});
+
+    //std::vector<double> input = {1, 1};
+    //std::vector<double> target = {1, 0};
+    //auto loss = model.loss(input, target);
 
     return 0;
 }

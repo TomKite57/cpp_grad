@@ -1,10 +1,18 @@
 
 #pragma once
 
+#include<iostream>
 #include<memory>
 #include<assert.h> 
+#include<cstdlib>
 
 #include "value.hpp"
+
+template <class T>
+T get_random_number(T min, T max)
+{
+    return static_cast<T>(rand()) / static_cast<T>(RAND_MAX) * (max - min) + min;
+}
 
 // Interface for NN components
 template <class T>
@@ -36,8 +44,9 @@ private:
 public:
     Neuron(size_t size): _size{size}
     {
-        _weights = std::vector<Value<T>>(size, static_cast<T>(0));
-        _bias = Value<T>(static_cast<T>(0));
+        for (size_t i=0; i<size; ++i)
+            _weights.push_back(Value<T>(get_random_number(-1.0, 1.0)));
+        _bias = Value<T>(get_random_number(-1.0, 1.0));
     }
     Neuron(Neuron&) = default;
     Neuron(Neuron&&) = default;
