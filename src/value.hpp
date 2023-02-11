@@ -3,6 +3,7 @@
 
 #include<iostream>
 #include<cmath>
+#include<vector>
 #include<utility>
 #include<functional>
 #include<set>
@@ -150,6 +151,7 @@ private:
 
 public:
     // Constructors and destructors
+    Value() { _ptr = std::make_shared<_Value<T>>(static_cast<T>(0)); }
     Value(T data) { _ptr = std::make_shared<_Value<T>>(data); }
     ~Value() { _ptr = nullptr; };
 

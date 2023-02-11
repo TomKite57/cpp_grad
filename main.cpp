@@ -3,7 +3,8 @@
 #include<cstdlib>
 
 #include "src/value.hpp"
-#include "src/module.hpp"
+//#include "src/module.hpp"
+#include "src/utils.hpp"
 
 void sanity_check()
 {
@@ -29,21 +30,25 @@ void sanity_check()
 
 int main()
 {
-    srand((unsigned) time(NULL));
+    set_seed();
     
-    //sanity_check();
+    sanity_check();
+    
+    //std::vector<double> input = {4.7, 5.0};
+    //std::vector<Value<double>> input; input.push_back(Value<double>(4.7)); input.push_back(Value<double>(5.0));
 
-    Neuron<double> neuron(2);
-    std::vector<double> input = {4.7, 5.0};
-    auto val = neuron(input);
-    std::cout << val << std::endl;
+    //Neuron<double> neuron(2);
+    //auto val = neuron(input);
+    //std::cout << val << std::endl;
 
+    //Layer<double> layer(2, 2);
+    //auto val = layer(input);
+    //std::cout << val << std::endl;
 
     //MLP<double> model({2, 2, 2, 2});
-
-    //std::vector<double> input = {1, 1};
     //std::vector<double> target = {1, 0};
-    //auto loss = model.loss(input, target);
+    //Value<double> loss = model.loss(input, target);
+    //std::cout << loss << std::endl;
 
     return 0;
 }

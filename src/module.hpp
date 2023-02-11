@@ -3,6 +3,7 @@
 
 #include<iostream>
 #include<memory>
+#include<vector>
 #include<assert.h> 
 #include<cstdlib>
 
@@ -50,9 +51,9 @@ public:
     }
     Neuron(Neuron&) = default;
     Neuron(Neuron&&) = default;
-    virtual ~Neuron() = default;
+    ~Neuron() = default;
 
-    virtual std::vector<std::shared_ptr<Value<T>>> get_parameters()
+    std::vector<std::shared_ptr<Value<T>>> get_parameters()
     {
         std::vector<std::shared_ptr<Value<T>>> rval = {std::make_shared<Value<T>>(_bias)};
         for (auto& w : _weights)
@@ -60,7 +61,7 @@ public:
         return rval;
     }
 
-    virtual Value<T> operator()(std::vector<Value<T>>& input)
+    Value<T> operator()(std::vector<Value<T>>& input)
     {
         assert(input.size() == _size);
 
@@ -73,7 +74,7 @@ public:
         return rval;
     }
 
-    virtual Value<T> operator()(std::vector<T>& input)
+    Value<T> operator()(std::vector<T>& input)
     {
         assert(input.size() == _size);
 
@@ -103,11 +104,21 @@ public:
         for (size_t i=0; i<_size_out; ++i)
             _neurons.push_back(Neuron<T>(_size_in));
     }
-    Layer(Layer&) = default;
-    Layer(Layer&&) = default;
-    virtual ~Layer() = default;
+    Layer(Layer& other)
+    {
+        _size_in = other._size_in;
+        _size_out = other._size_out;
+        _neurons = other._neurons;
+    }
+    Layer(Layer&& other)
+    {
+        _size_in = other._size_in;
+        _size_out = other._size_out;
+        _neurons = std::move(other._neurons);
+    }
+    ~Layer() { _neurons.clear(); };
 
-    virtual std::vector<std::shared_ptr<Value<T>>> get_parameters()
+    std::vector<std::shared_ptr<Value<T>>> get_parameters()
     {
         std::vector<std::shared_ptr<Value<T>>> rval;
         for (auto& n : _neurons)
@@ -118,15 +129,17 @@ public:
         return rval;
     }
 
-    virtual std::vector<Value<T>> operator()(std::vector<Value<T>>& input)
+    std::vector<Value<T>> operator()(std::vector<Value<T>>& input)
     {
         std::vector<Value<T>> rval;
         for (auto& n : _neurons)
+        {
             rval.push_back(n(input));
+        }
         return rval;
     }
 
-    virtual std::vector<Value<T>> operator()(std::vector<T>& input)
+    std::vector<Value<T>> operator()(std::vector<T>& input)
     {
         std::vector<Value<T>> rval;
         for (auto& n : _neurons)
@@ -145,13 +158,16 @@ public:
     MLP(std::vector<size_t> sizes)
     {
         for (size_t i=0; i<sizes.size()-1; ++i)
-            _layers.push_back(Layer<T>(sizes[i], sizes[i+1]));
+        {
+            Layer<T> temp(sizes[i], sizes[i+1]);
+            _layers.push_back(temp);
+        }
     };
-    MLP(MLP&) = default;
-    MLP(MLP&&) = default;
-    virtual ~MLP() = default;
+    MLP(MLP&) = delete;
+    MLP(MLP&&) = delete;
+    ~MLP() = default;
 
-    virtual std::vector<std::shared_ptr<Value<T>>> get_parameters()
+    std::vector<std::shared_ptr<Value<T>>> get_parameters()
     {
         std::vector<std::shared_ptr<Value<T>>> rval;
         for (auto& l : _layers)
@@ -162,7 +178,7 @@ public:
         return rval;
     }
 
-    virtual std::vector<Value<T>> operator()(std::vector<Value<T>>& input)
+    std::vector<Value<T>> operator()(std::vector<Value<T>>& input)
     {
         std::vector<Value<T>> rval = input;
         for (auto& l : _layers)
@@ -170,7 +186,7 @@ public:
         return rval;
     }
 
-    virtual std::vector<Value<T>> operator()(std::vector<T>& input)
+    std::vector<Value<T>> operator()(std::vector<T>& input)
     {
         std::vector<Value<T>> rval;
         
@@ -182,10 +198,11 @@ public:
         return rval;
     }
 
-    virtual Value<T> loss(std::vector<T>& input, std::vector<T>& target)
+    Value<T> loss(std::vector<T>& input, std::vector<T>& target)
     {
         auto output = operator()(input);
-        Value<T> rval = Value<T>(0);
+
+        Value<T> rval = Value<T>(static_cast<T>(0));
         for (size_t i=0; i<output.size(); ++i)
         {
             auto target_value = Value<T>(target[i]);
@@ -194,5 +211,20 @@ public:
             rval = rval + temp_loss;
         }
         return rval;
+    }
+
+    Value<T> loss(std::vector<Value<T>>& input, std::vector<T>& target)
+    {
+        std::vector<Value<T>> output = operator()(input);
+
+        Value<T> rval(static_cast<T>(0));
+        for (size_t i=0; i<output.size(); ++i)
+        {
+            auto target_value = Value<T>(target[i]);
+            auto diff = output[i] - target_value;
+            auto temp_loss = pow(diff, static_cast<T>(2));
+            rval = rval + temp_loss;
+        }
+        return Value<T>(static_cast<T>(0));
     }
 };
