@@ -22,8 +22,6 @@ template <class T>
 class _Value
 {
     template <class C> friend class Value;
-    template <class C> friend std::vector<_Value<C>*> build_topo(_Value<C>*);
-    template <class C> friend void _build_topo(_Value<C>*, std::set<_Value<C>*>&, std::vector<_Value<C>*>&);
 
     template <class C>
     friend std::ostream& operator<<(std::ostream& os, _Value<C>& val)
@@ -62,12 +60,41 @@ public:
 
     // Setters
     void zero_grad(){ _grad = static_cast<T>(0); }
+    void zero_grad_all()
+    {
+        auto order = build_topo();
+        for (auto n=order.rbegin(); n!=order.rend(); ++n)
+            (*n)->zero_grad();
+    }
     void set_backward(std::function<void()> func){ _backward = func; }
+
+    // Topological sort
+    std::vector<_Value<T>*> build_topo()
+    {
+        std::vector<_Value<T>*> rval;
+        std::set<_Value<T>*> visited;
+
+        // Build hidden function in this scope
+        std::function<void(_Value<T>*, std::set<_Value<T>*>&, std::vector<_Value<T>*>&)> _build_topo;
+        _build_topo = [&_build_topo](_Value<T>* node, std::set<_Value<T>*>& visited, std::vector<_Value<T>*>& order)
+        {
+            if (visited.find(node) != visited.end())
+                return;
+
+            visited.insert(node);
+            for (auto& par_ptr : node->get_parent_ptrs())
+                _build_topo(par_ptr.get(), visited, order);
+            order.push_back(node);
+        };
+
+        _build_topo(this, visited, rval);
+        return rval;
+    }
 
     // Backpropagation
     void backward()
     {
-        auto order = build_topo(this);
+        auto order = build_topo();
 
         // Set dx/dx=1
         _grad = static_cast<T>(1);
@@ -139,8 +166,10 @@ public:
     T& get_grad() { return _ptr->get_grad(); }
     std::vector<std::shared_ptr<_Value<T>>>& get_parent_ptrs() { return _ptr->get_parent_ptrs(); }
     void zero_grad(){ _ptr->zero_grad(); }
+    void zero_grad_all(){ _ptr->zero_grad_all(); }
     void set_backward(std::function<void()> func){ _ptr->set_backward(func); }
     void backward(){ _ptr->backward(); }
+    std::vector<_Value<T>*> build_topo(){ return _ptr->build_topo(); }
 
     // [TODO] DEBUG ACCESSOR ONLY
     std::shared_ptr<_Value<T>> get_ptr() { return _ptr; }
@@ -244,25 +273,3 @@ public:
         return operator*(static_cast<T>(-1));
     }
 };
-
-template<class T>
-std::vector<_Value<T>*> build_topo(_Value<T>* root)
-{
-    std::vector<_Value<T>*> rval;
-    std::set<_Value<T>*> visited;
-    _build_topo(root, visited, rval);
-    return rval;
-}
-
-// [TODO] Make class for encapsulation
-template<class T>
-void _build_topo(_Value<T>* node, std::set<_Value<T>*>& visited, std::vector<_Value<T>*>& order)
-{
-    if (visited.find(node) != visited.end())
-        return;
-
-    visited.insert(node);
-    for (auto& par_ptr : node->get_parent_ptrs())
-        _build_topo(par_ptr.get(), visited, order);
-    order.push_back(node);
-}
