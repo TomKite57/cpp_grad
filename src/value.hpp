@@ -250,19 +250,20 @@ std::vector<_Value<T>*> build_topo(_Value<T>* root)
 {
     std::vector<_Value<T>*> rval;
     std::set<_Value<T>*> visited;
+
+    // Build hidden function in this scope
+    std::function<void(_Value<T>*, std::set<_Value<T>*>&, std::vector<_Value<T>*>&)> _build_topo;
+    _build_topo = [&_build_topo](_Value<T>* node, std::set<_Value<T>*>& visited, std::vector<_Value<T>*>& order)
+    {
+        if (visited.find(node) != visited.end())
+            return;
+
+        visited.insert(node);
+        for (auto& par_ptr : node->get_parent_ptrs())
+            _build_topo(par_ptr.get(), visited, order);
+        order.push_back(node);
+    };
+
     _build_topo(root, visited, rval);
     return rval;
-}
-
-// [TODO] Make class for encapsulation
-template<class T>
-void _build_topo(_Value<T>* node, std::set<_Value<T>*>& visited, std::vector<_Value<T>*>& order)
-{
-    if (visited.find(node) != visited.end())
-        return;
-
-    visited.insert(node);
-    for (auto& par_ptr : node->get_parent_ptrs())
-        _build_topo(par_ptr.get(), visited, order);
-    order.push_back(node);
 }
