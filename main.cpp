@@ -32,29 +32,20 @@ int main()
 {
     set_seed();
     
-    sanity_check();
-    
-    //std::vector<double> input = {4.7, 5.0};
-    std::vector<Value<double>> input{Value<double>(4.7), Value<double>(5.0)};
-
-    //Neuron<double> neuron(2);
-    //auto val = neuron(input);
-    //std::cout << val << std::endl;
-
-    //Layer<double> layer(2, 2);
-    //auto val = layer(input);
-    //std::cout << val << std::endl;
+    //sanity_check();
 
     MLP<double> model({2, 2, 2, 2});
+
+    std::vector<double> input = {4.7, 5.0};
     std::vector<double> target = {1, 0};
 
-    for (size_t i=0; i<100; ++i)
+    for (size_t i=0; i<50; ++i)
     {
         auto loss = model.loss(input, target);
         loss.backward();
         model.descend_grad();
         model.zero_grad();
-        std::cout << loss << std::endl;
+        std::cout << "Output: " << model(input) << "\nLoss: " << loss << "\n\n";
     }
 
     return 0;
