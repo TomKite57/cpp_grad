@@ -92,9 +92,12 @@ class Value
     {
         auto out = Value(std::pow(val.get_data(), exp), {std::make_shared<Value<C>>(val),});
 
-        auto _back = [&]()
+        std::shared_ptr<_Value<T>>& val_ptr = val._ptr;
+        std::shared_ptr<_Value<T>>& out_ptr = out._ptr;
+
+        auto _back = [=]()
         {
-            val.get_grad() += (exp * std::pow(val.get_data(), exp- static_cast<T>(1))) * out.get_grad();
+            val.get_grad() += (exp * std::pow(val_ptr->get_data(), exp- static_cast<T>(1))) * out_ptr->get_grad();
         };
         out.set_backward(_back);
 
@@ -128,7 +131,7 @@ public:
     Value(Value&& other) { _ptr = other._ptr; other._ptr = nullptr; }
 
     // Copy and move assignment operators
-    Value<T>& operator=(Value<T>& other) { _ptr = other._ptr; return *this; }
+    Value<T>& operator=(Value<T>& other) { if (&other!=this) _ptr = other._ptr; return *this; }
     Value<T>& operator=(Value<T>&& other) { _ptr = other._ptr; other._ptr = nullptr; return *this; }
 
     // Transparency to the _Value class
@@ -145,15 +148,19 @@ public:
     // Arithmetic operators
     Value<T> operator+(Value<T>& other)
     {
-        auto out = Value<T>(
+        Value<T> out(
             get_data() + other.get_data(),
             {get_ptr(), other.get_ptr()}
         );
 
-        auto _back = [&]()
+        std::shared_ptr<_Value<T>>& this_ptr = _ptr;
+        std::shared_ptr<_Value<T>>& other_ptr = other._ptr;
+        std::shared_ptr<_Value<T>>& out_ptr = out._ptr;
+
+        auto _back = [=]()
         {
-            get_grad() += out.get_grad();
-            other.get_grad() += out.get_grad();
+            this_ptr->_grad += out_ptr->_grad;
+            other_ptr->_grad += out_ptr->_grad;
         };
         out.set_backward(_back);
 
@@ -173,10 +180,14 @@ public:
             {get_ptr(), other.get_ptr()}
         );
 
-        auto _back = [&]()
+        std::shared_ptr<_Value<T>>& this_ptr = _ptr;
+        std::shared_ptr<_Value<T>>& other_ptr = other._ptr;
+        std::shared_ptr<_Value<T>>& out_ptr = out._ptr;
+
+        auto _back = [=]()
         {
-            get_grad() += out.get_grad();
-            other.get_grad() += out.get_grad();
+            this_ptr->get_grad() += out_ptr->get_grad();
+            other_ptr->get_grad() += out_ptr->get_grad();
         };
         out.set_backward(_back);
 
@@ -196,10 +207,14 @@ public:
             {get_ptr(), other.get_ptr()}
         );
 
+        std::shared_ptr<_Value<T>>& this_ptr = _ptr;
+        std::shared_ptr<_Value<T>>& other_ptr = other._ptr;
+        std::shared_ptr<_Value<T>>& out_ptr = out._ptr;
+
         auto _back = [&]()
         {
-            get_grad() += other.get_data() * out.get_grad();
-            other.get_grad() += get_data() * out.get_grad();
+            this_ptr->get_grad() += other_ptr->get_data() * out_ptr->get_grad();
+            other_ptr->get_grad() += this_ptr->get_data() * out_ptr->get_grad();
         };
         out.set_backward(_back);
 
