@@ -22,8 +22,6 @@ template <class T>
 class _Value
 {
     template <class C> friend class Value;
-    template <class C> friend std::vector<_Value<C>*> build_topo(_Value<C>*);
-    template <class C> friend void _build_topo(_Value<C>*, std::set<_Value<C>*>&, std::vector<_Value<C>*>&);
 
     template <class C>
     friend std::ostream& operator<<(std::ostream& os, _Value<C>& val)
