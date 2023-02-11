@@ -178,6 +178,24 @@ public:
     // ptr accessor
     std::shared_ptr<_Value<T>> get_ptr() const { return _ptr; }
 
+    // Relu
+    Value<T> relu() const
+    {
+        auto out = Value<T>(std::max(static_cast<T>(0), get_data()), {get_ptr(),});
+
+        std::shared_ptr<_Value<T>> this_ptr = _ptr;
+        std::shared_ptr<_Value<T>> out_ptr = out._ptr;
+
+        auto _back = [=]()
+        {
+            if (this_ptr->get_data() > static_cast<T>(0))
+                this_ptr->get_grad() += out_ptr->get_grad();
+        };
+        out.set_backward(_back);
+
+        return out;
+    }
+
     // Arithmetic operators
     Value<T> operator+(const Value<T>& other) const
     {

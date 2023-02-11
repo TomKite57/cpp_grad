@@ -39,11 +39,12 @@ class Neuron: public Module<T>
 {
 private:
     size_t _size;
+    bool _non_lin;
     std::vector<Value<T>> _weights;
     Value<T> _bias{static_cast<T>(0)};
 
 public:
-    Neuron(const size_t& size): _size{size}
+    Neuron(const size_t& size, const bool& non_lin=true): _size{size}, _non_lin{non_lin}
     {
         for (size_t i=0; i<size; ++i)
             _weights.push_back(Value<T>(get_random_number(static_cast<T>(-1.0), static_cast<T>(1.0))));
@@ -87,7 +88,8 @@ public:
             auto new_temp = temp * _weights[i];
             rval = rval + new_temp;
         }
-        return rval;
+
+        return _non_lin ? rval.relu() : rval;
     }
 };
 
