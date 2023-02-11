@@ -102,6 +102,11 @@ public:
         for (auto n=order.rbegin(); n!=order.rend(); ++n)
             (*n)->_backward();
     }
+
+    void descend_grad(const T& learning_rate)
+    {
+        _data -= learning_rate * _grad;
+    }
 };
 
 // Central Value class
@@ -173,6 +178,7 @@ public:
     void zero_grad_all() const { _ptr->zero_grad_all(); }
     void set_backward(std::function<void()> func) const { _ptr->set_backward(func); }
     void backward() const { _ptr->backward(); }
+    void descend_grad(const T& learning_rate) const { _ptr->descend_grad(learning_rate); }
     std::vector<_Value<T>*> build_topo() const { return _ptr->build_topo(); }
 
     // ptr accessor

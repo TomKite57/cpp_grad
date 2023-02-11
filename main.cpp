@@ -47,11 +47,15 @@ int main()
 
     MLP<double> model({2, 2, 2, 2});
     std::vector<double> target = {1, 0};
-    Value<double> loss = model.loss(input, target);
-    std::cout << loss << std::endl;
 
-    for (auto& n : model.get_parameters())
-        std::cout << *n << std::endl;
+    for (size_t i=0; i<100; ++i)
+    {
+        auto loss = model.loss(input, target);
+        loss.backward();
+        model.descend_grad();
+        model.zero_grad();
+        std::cout << loss << std::endl;
+    }
 
     return 0;
 }

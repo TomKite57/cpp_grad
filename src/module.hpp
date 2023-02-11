@@ -179,6 +179,18 @@ public:
         return rval;
     }
 
+    void descend_grad(const T& learning_rate=static_cast<T>(0.01))
+    {
+        for (const auto& p : get_parameters())
+            p->descend_grad(learning_rate);
+    }
+
+    void zero_grad()
+    {
+        for (const auto& p : get_parameters())
+            p->zero_grad();
+    }
+
     std::vector<Value<T>> operator()(const std::vector<Value<T>>& input) const
     {
         std::vector<Value<T>> rval = input;
