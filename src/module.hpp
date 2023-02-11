@@ -10,7 +10,7 @@
 #include "value.hpp"
 
 template <class T>
-T get_random_number(T min, T max)
+T get_random_number(const T& min, const T& max)
 {
     return static_cast<T>(rand()) / static_cast<T>(RAND_MAX) * (max - min) + min;
 }
@@ -21,11 +21,11 @@ class Module
 {
 public:
     Module() = default;
-    Module(Module&) = default;
+    Module(const Module&) = default;
     Module(Module&&) = default;
     virtual ~Module() = default;
 
-    virtual std::vector<std::shared_ptr<Value<T>>> get_parameters() = 0;
+    virtual std::vector<std::shared_ptr<Value<T>>> get_parameters() const = 0;
 
     void zero_grad()
     {
@@ -40,20 +40,22 @@ class Neuron: public Module<T>
 private:
     size_t _size;
     std::vector<Value<T>> _weights;
-    Value<T> _bias{0};
+    Value<T> _bias{static_cast<T>(0)};
 
 public:
-    Neuron(size_t size): _size{size}
+    Neuron(const size_t& size): _size{size}
     {
         for (size_t i=0; i<size; ++i)
-            _weights.push_back(Value<T>(get_random_number(-1.0, 1.0)));
-        _bias = Value<T>(get_random_number(-1.0, 1.0));
+            _weights.push_back(Value<T>(get_random_number(static_cast<T>(-1.0), static_cast<T>(1.0))));
+        _bias = Value<T>(get_random_number(static_cast<T>(-1.0), static_cast<T>(1.0)));
     }
-    Neuron(Neuron&) = default;
-    Neuron(Neuron&&) = default;
-    ~Neuron() = default;
+    Neuron(const Neuron& other) { _size = other._size; _weights = other._weights; _bias = other._bias; }
+    Neuron(Neuron&& other) { _size = other._size; _weights = std::move(other._weights); _bias = std::move(other._bias); }
+    Neuron& operator=(const Neuron& other) { _size = other._size; _weights = other._weights; _bias = other._bias; return *this; }
+    Neuron& operator=(Neuron&& other) { _size = other._size; _weights = std::move(other._weights); _bias = std::move(other._bias); return *this; }
+    ~Neuron() { _weights.clear(); }
 
-    std::vector<std::shared_ptr<Value<T>>> get_parameters()
+    std::vector<std::shared_ptr<Value<T>>> get_parameters() const
     {
         std::vector<std::shared_ptr<Value<T>>> rval = {std::make_shared<Value<T>>(_bias)};
         for (auto& w : _weights)
@@ -61,7 +63,7 @@ public:
         return rval;
     }
 
-    Value<T> operator()(std::vector<Value<T>>& input)
+    Value<T> operator()(const std::vector<Value<T>>& input) const
     {
         assert(input.size() == _size);
 
@@ -74,7 +76,7 @@ public:
         return rval;
     }
 
-    Value<T> operator()(std::vector<T>& input)
+    Value<T> operator()(const std::vector<T>& input) const
     {
         assert(input.size() == _size);
 
@@ -98,13 +100,13 @@ private:
     std::vector<Neuron<T>> _neurons;
 
 public:
-    Layer(size_t _size_in, size_t _size_out):
+    Layer(const size_t& _size_in, const size_t& _size_out):
     _size_in{_size_in}, _size_out{_size_out}
     {
         for (size_t i=0; i<_size_out; ++i)
             _neurons.push_back(Neuron<T>(_size_in));
     }
-    Layer(Layer& other)
+    Layer(const Layer& other)
     {
         _size_in = other._size_in;
         _size_out = other._size_out;
@@ -118,7 +120,7 @@ public:
     }
     ~Layer() { _neurons.clear(); };
 
-    std::vector<std::shared_ptr<Value<T>>> get_parameters()
+    std::vector<std::shared_ptr<Value<T>>> get_parameters() const
     {
         std::vector<std::shared_ptr<Value<T>>> rval;
         for (auto& n : _neurons)
@@ -129,7 +131,7 @@ public:
         return rval;
     }
 
-    std::vector<Value<T>> operator()(std::vector<Value<T>>& input)
+    std::vector<Value<T>> operator()(const std::vector<Value<T>>& input) const
     {
         std::vector<Value<T>> rval;
         for (auto& n : _neurons)
@@ -139,7 +141,7 @@ public:
         return rval;
     }
 
-    std::vector<Value<T>> operator()(std::vector<T>& input)
+    std::vector<Value<T>> operator()(const std::vector<T>& input) const
     {
         std::vector<Value<T>> rval;
         for (auto& n : _neurons)
@@ -155,19 +157,16 @@ private:
     std::vector<Layer<T>> _layers;
 
 public:
-    MLP(std::vector<size_t> sizes)
+    MLP(const std::vector<size_t>& sizes)
     {
         for (size_t i=0; i<sizes.size()-1; ++i)
-        {
-            Layer<T> temp(sizes[i], sizes[i+1]);
-            _layers.push_back(temp);
-        }
-    };
-    MLP(MLP&) = delete;
+            _layers.push_back(Layer<T>(sizes[i], sizes[i+1]));
+    }
+    MLP(const MLP&) = delete;
     MLP(MLP&&) = delete;
-    ~MLP() = default;
+    ~MLP() { _layers.clear(); }
 
-    std::vector<std::shared_ptr<Value<T>>> get_parameters()
+    std::vector<std::shared_ptr<Value<T>>> get_parameters() const
     {
         std::vector<std::shared_ptr<Value<T>>> rval;
         for (auto& l : _layers)
@@ -178,7 +177,7 @@ public:
         return rval;
     }
 
-    std::vector<Value<T>> operator()(std::vector<Value<T>>& input)
+    std::vector<Value<T>> operator()(const std::vector<Value<T>>& input) const
     {
         std::vector<Value<T>> rval = input;
         for (auto& l : _layers)
@@ -186,7 +185,7 @@ public:
         return rval;
     }
 
-    std::vector<Value<T>> operator()(std::vector<T>& input)
+    std::vector<Value<T>> operator()(const std::vector<T>& input) const
     {
         std::vector<Value<T>> rval;
         
@@ -198,7 +197,7 @@ public:
         return rval;
     }
 
-    Value<T> loss(std::vector<T>& input, std::vector<T>& target)
+    Value<T> loss(const std::vector<T>& input, const std::vector<T>& target) const
     {
         auto output = operator()(input);
 
@@ -213,7 +212,7 @@ public:
         return rval;
     }
 
-    Value<T> loss(std::vector<Value<T>>& input, std::vector<T>& target)
+    Value<T> loss(const std::vector<Value<T>>& input, const std::vector<T>& target) const
     {
         std::vector<Value<T>> output = operator()(input);
 
@@ -225,6 +224,6 @@ public:
             auto temp_loss = pow(diff, static_cast<T>(2));
             rval = rval + temp_loss;
         }
-        return Value<T>(static_cast<T>(0));
+        return rval;
     }
 };

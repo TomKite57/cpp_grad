@@ -30,8 +30,8 @@ class _Value
     }
 
 private:
-    T _data{0};
-    T _grad{0};
+    T _data{static_cast<T>(0)};
+    T _grad{static_cast<T>(0)};
     std::vector<std::shared_ptr<_Value<T>>> _parents;
     std::function<void()> _backward = do_nothing;
 
@@ -120,8 +120,8 @@ class Value
     {
         auto out = Value(std::pow(val.get_data(), exp), {val.get_ptr(),});
 
-        std::shared_ptr<_Value<T>>& val_ptr = val._ptr;
-        std::shared_ptr<_Value<T>>& out_ptr = out._ptr;
+        std::shared_ptr<_Value<T>> val_ptr = val._ptr;
+        std::shared_ptr<_Value<T>> out_ptr = out._ptr;
 
         auto _back = [=]()
         {
@@ -213,9 +213,9 @@ public:
             {get_ptr(), other.get_ptr()}
         );
 
-        std::shared_ptr<_Value<T>>& this_ptr = _ptr;
-        std::shared_ptr<_Value<T>>& other_ptr = other._ptr;
-        std::shared_ptr<_Value<T>>& out_ptr = out._ptr;
+        std::shared_ptr<_Value<T>> this_ptr = _ptr;
+        std::shared_ptr<_Value<T>> other_ptr = other._ptr;
+        std::shared_ptr<_Value<T>> out_ptr = out._ptr;
 
         auto _back = [=]()
         {
