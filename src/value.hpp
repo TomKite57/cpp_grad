@@ -9,13 +9,11 @@
 #include<set>
 #include<memory>
 
-std::function<void()> do_nothing = [](){return;};
+const std::function<void()> do_nothing = [](){return;};
 
 // Forward declarations
 template<class T> class _Value;
 template<class T> class Value;
-template<class T> std::vector<_Value<T>*> build_topo(_Value<T>*);
-template<class T> void _build_topo(_Value<T>*, std::set<_Value<T>*>&, std::vector<_Value<T>*>&);
 
 // A "Hidden" value class which can only be heap allocated. Will be accessed through the proxy class
 
@@ -38,36 +36,38 @@ private:
     std::function<void()> _backward = do_nothing;
 
 public:
-    _Value(T data, std::vector<std::shared_ptr<_Value<T>>> parents):
+    _Value(const T& data, const std::vector<std::shared_ptr<_Value<T>>>& parents):
     _data{data}, _parents{parents}
     {}
 
     // Constructor and destructor
-    _Value(T data): _data{data} {}
+    _Value(const T& data): _data{data} {}
     ~_Value() = default;
 
     // Copy and move constructors
-    _Value(_Value&) = delete;
+    _Value(const _Value&) = delete;
     _Value(_Value&&) = delete;
 
     // Copy and move assignment operators
-    _Value<T>& operator=(_Value<T>& other) = delete;
+    _Value<T>& operator=(const _Value<T>& other) = delete;
     _Value<T>& operator=(_Value<T>&& other) = delete;
 
     // Getters (Note reference return type however)
+    const T& get_data() const { return _data; }
+    const T& get_grad() const { return _grad; }
     T& get_data() { return _data; }
     T& get_grad() { return _grad; }
-    std::vector<std::shared_ptr<_Value<T>>>& get_parent_ptrs() { return _parents; }
+    const std::vector<std::shared_ptr<_Value<T>>>& get_parent_ptrs() const { return _parents; }
 
     // Setters
-    void zero_grad(){ _grad = static_cast<T>(0); }
+    void zero_grad() { _grad = static_cast<T>(0); }
     void zero_grad_all()
     {
         auto order = build_topo();
         for (auto n=order.rbegin(); n!=order.rend(); ++n)
             (*n)->zero_grad();
     }
-    void set_backward(std::function<void()> func){ _backward = func; }
+    void set_backward(const std::function<void()>& func) { _backward = func; }
 
     // Topological sort
     std::vector<_Value<T>*> build_topo()
@@ -109,14 +109,14 @@ template <class T>
 class Value
 {
     template <class C>
-    friend std::ostream& operator<<(std::ostream& os, Value<C>& val)
+    friend std::ostream& operator<<(std::ostream& os, const Value<C>& val)
     {
         os << "Value(" << val.get_data() << ", " << val.get_grad() << ")";
         return os;
     }
 
     template <class C>
-    friend Value<C> pow(Value<C>& val, C exp)
+    friend Value<C> pow(const Value<C>& val,  const C& exp)
     {
         auto out = Value(std::pow(val.get_data(), exp), {val.get_ptr(),});
 
@@ -133,60 +133,62 @@ class Value
     }
 
     template <class C>
-    friend Value<C> operator+(C num, Value<C>& val) {return val + num;}
+    friend Value<C> operator+(C num, const Value<C>& val) {return val + num;}
 
     template <class C>
-    friend Value<C> operator-(C num, Value<C>& val) {return val - num;}
+    friend Value<C> operator-(C num, const Value<C>& val) {return val - num;}
 
     template <class C>
-    friend Value<C> operator*(C num, Value<C>& val) {return val * num;}
+    friend Value<C> operator*(C num, const Value<C>& val) {return val * num;}
 
     template <class C>
-    friend Value<C> operator/(C num, Value<C>& val) {return val / num;}
+    friend Value<C> operator/(C num, const Value<C>& val) {return val / num;}
 
 private:
     std::shared_ptr<_Value<T>> _ptr = nullptr;
 
-    Value(T data, std::vector<std::shared_ptr<_Value<T>>> parents) { _ptr = std::make_shared<_Value<T>>(data, parents); }
+    Value(const T& data, const std::vector<std::shared_ptr<_Value<T>>>& parents) { _ptr = std::make_shared<_Value<T>>(data, parents); }
 
 public:
     // Constructors and destructors
     Value() { _ptr = std::make_shared<_Value<T>>(static_cast<T>(0)); }
-    Value(T data) { _ptr = std::make_shared<_Value<T>>(data); }
+    Value(const T& data) { _ptr = std::make_shared<_Value<T>>(data); }
     ~Value() { _ptr = nullptr; };
 
     // Copy and move constructors
-    Value(Value& other) { _ptr = other._ptr; }
+    Value(const Value& other) { _ptr = other._ptr; }
     Value(Value&& other) { _ptr = other._ptr; other._ptr = nullptr; }
 
     // Copy and move assignment operators
-    Value<T>& operator=(Value<T>& other) { if (&other!=this) _ptr = other._ptr; return *this; }
+    Value<T>& operator=(const Value<T>& other) { if (&other!=this) _ptr = other._ptr; return *this; }
     Value<T>& operator=(Value<T>&& other) { _ptr = other._ptr; other._ptr = nullptr; return *this; }
 
     // Transparency to the _Value class
+    const T& get_data() const { return _ptr->get_data(); }
+    const T& get_grad() const { return _ptr->get_grad(); }
     T& get_data() { return _ptr->get_data(); }
     T& get_grad() { return _ptr->get_grad(); }
-    std::vector<std::shared_ptr<_Value<T>>>& get_parent_ptrs() { return _ptr->get_parent_ptrs(); }
-    void zero_grad(){ _ptr->zero_grad(); }
-    void zero_grad_all(){ _ptr->zero_grad_all(); }
-    void set_backward(std::function<void()> func){ _ptr->set_backward(func); }
-    void backward(){ _ptr->backward(); }
-    std::vector<_Value<T>*> build_topo(){ return _ptr->build_topo(); }
+    std::vector<std::shared_ptr<_Value<T>>>& get_parent_ptrs() const { return _ptr->get_parent_ptrs(); }
+    void zero_grad() const { _ptr->zero_grad(); }
+    void zero_grad_all() const { _ptr->zero_grad_all(); }
+    void set_backward(std::function<void()> func) const { _ptr->set_backward(func); }
+    void backward() const { _ptr->backward(); }
+    std::vector<_Value<T>*> build_topo() const { return _ptr->build_topo(); }
 
     // ptr accessor
-    std::shared_ptr<_Value<T>> get_ptr() { return _ptr; }
+    std::shared_ptr<_Value<T>> get_ptr() const { return _ptr; }
 
     // Arithmetic operators
-    Value<T> operator+(Value<T>& other)
+    Value<T> operator+(const Value<T>& other) const
     {
         Value<T> out(
             get_data() + other.get_data(),
             {get_ptr(), other.get_ptr()}
         );
 
-        std::shared_ptr<_Value<T>>& this_ptr = _ptr;
-        std::shared_ptr<_Value<T>>& other_ptr = other._ptr;
-        std::shared_ptr<_Value<T>>& out_ptr = out._ptr;
+        std::shared_ptr<_Value<T>> this_ptr = _ptr;
+        std::shared_ptr<_Value<T>> other_ptr = other._ptr;
+        std::shared_ptr<_Value<T>> out_ptr = out._ptr;
 
         auto _back = [=]()
         {
@@ -198,13 +200,13 @@ public:
         return out;
     }
 
-    Value<T> operator+(T other)
+    Value<T> operator+(const T& other) const
     {
         auto temp = Value<T>(other);
         return operator+(temp);
     }
 
-    Value<T> operator-(Value<T>& other)
+    Value<T> operator-(const Value<T>& other) const
     {
         auto out = Value<T>(
             get_data() - other.get_data(),
@@ -225,24 +227,24 @@ public:
         return out;
     }
 
-    Value<T> operator-(T other)
+    Value<T> operator-(const T& other) const
     {
         auto temp = Value<T>(other);
         return operator-(temp);
     }
 
-    Value<T> operator*(Value<T>& other)
+    Value<T> operator*(const Value<T>& other) const
     {
         auto out = Value<T>(
             get_data() * other.get_data(),
             {get_ptr(), other.get_ptr()}
         );
 
-        std::shared_ptr<_Value<T>>& this_ptr = _ptr;
-        std::shared_ptr<_Value<T>>& other_ptr = other._ptr;
-        std::shared_ptr<_Value<T>>& out_ptr = out._ptr;
+        std::shared_ptr<_Value<T>> this_ptr = _ptr;
+        std::shared_ptr<_Value<T>> other_ptr = other._ptr;
+        std::shared_ptr<_Value<T>> out_ptr = out._ptr;
 
-        auto _back = [&]()
+        auto _back = [=]()
         {
             this_ptr->get_grad() += other_ptr->get_data() * out_ptr->get_grad();
             other_ptr->get_grad() += this_ptr->get_data() * out_ptr->get_grad();
@@ -252,19 +254,19 @@ public:
         return out;
     }
 
-    Value<T> operator*(T other)
+    Value<T> operator*(const T& other) const
     {
         auto temp = Value<T>(other);
         return operator*(temp);
     }
 
-    Value<T> operator/(Value<T>& other)
+    Value<T> operator/(const Value<T>& other) const
     {
         auto temp = pow(other, static_cast<T>(-1));
         return operator*(temp);
     }
 
-    Value<T> operator/(T other)
+    Value<T> operator/(const T& other) const
     {
         auto temp = Value<T>(other);
         return operator/(temp);
