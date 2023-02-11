@@ -60,6 +60,12 @@ public:
 
     // Setters
     void zero_grad(){ _grad = static_cast<T>(0); }
+    void zero_grad_all()
+    {
+        auto order = build_topo();
+        for (auto n=order.rbegin(); n!=order.rend(); ++n)
+            (*n)->zero_grad();
+    }
     void set_backward(std::function<void()> func){ _backward = func; }
 
     // Topological sort
@@ -160,6 +166,7 @@ public:
     T& get_grad() { return _ptr->get_grad(); }
     std::vector<std::shared_ptr<_Value<T>>>& get_parent_ptrs() { return _ptr->get_parent_ptrs(); }
     void zero_grad(){ _ptr->zero_grad(); }
+    void zero_grad_all(){ _ptr->zero_grad_all(); }
     void set_backward(std::function<void()> func){ _ptr->set_backward(func); }
     void backward(){ _ptr->backward(); }
     std::vector<_Value<T>*> build_topo(){ return _ptr->build_topo(); }
