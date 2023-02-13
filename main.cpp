@@ -1,6 +1,7 @@
 
 #include<iostream>
 #include<cstdlib>
+#include<tuple>
 
 #include "src/value.hpp"
 #include "src/module.hpp"
@@ -28,16 +29,12 @@ void sanity_check()
     std::cout << "\n";
 }
 
-int main()
+void MLP_test()
 {
-    set_seed();
-    
-    //sanity_check();
+    MLP<double> model({5, 5, 5, 5});
 
-    MLP<double> model({2, 2, 2, 2});
-
-    std::vector<double> input = {4.7, 5.0};
-    std::vector<double> target = {1, 0};
+    std::vector<double> input = {4.7, 5.0, 5.2, 5.4, 5.6};
+    std::vector<double> target = {1, 0, 0, 0, 0};
 
     for (size_t i=0; i<50; ++i)
     {
@@ -47,6 +44,46 @@ int main()
         model.zero_grad();
         std::cout << "Output: " << model(input) << "\nLoss: " << loss << "\n\n";
     }
+}
+
+
+
+int main()
+{
+    set_seed();
+    
+    //sanity_check();
+
+    //MLP_test();
+
+    std::cout << "Loading MNIST data..." << std::endl;
+    auto all_data = get_mnist_data<double>();
+    auto& train_data = std::get<0>(all_data);
+    auto& train_labels = std::get<1>(all_data);
+    auto& test_data = std::get<2>(all_data);
+    auto& test_labels = std::get<3>(all_data);
+    std::cout << "Done!" << std::endl;
+
+    std::cout << "Creating model..." << std::endl;
+    MLP<double> model({784, 30, 10});
+    std::cout << "Done!" << std::endl;
+
+    std::cout << "Training model..." << std::endl;
+    int batch_size = 10;
+    int num_epochs = 5;
+    for (int epoch=0; epoch<num_epochs; ++epoch)
+    {
+        for (int i=epoch; i<train_data.size(); i+=batch_size)
+        {
+            auto loss = model.loss(train_data[i], train_labels[i]);
+            loss.backward();
+            model.descend_grad();
+            model.zero_grad();
+        }
+        std::cout << "Epoch " << epoch << " complete." << std::endl;
+        std::cout << "Accuracy: " << evaluate_model(model, test_data, test_labels) << std::endl;
+    }
+    std::cout << "Done!" << std::endl;
 
     return 0;
 }

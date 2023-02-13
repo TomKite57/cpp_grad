@@ -1,5 +1,5 @@
-
-#pragma once
+#ifndef VALUE_HPP
+#define VALUE_HPP
 
 #include<iostream>
 #include<cmath>
@@ -300,4 +300,32 @@ public:
     {
         return operator*(static_cast<T>(-1));
     }
+
+    // Comparison operators
+    bool operator==(const Value<T>& other) const
+    {
+        return get_data() == other.get_data();
+    }
+
+    bool operator<(const Value<T>& other) const
+    {
+        return get_data() < other.get_data();
+    }
+
+    bool operator>(const Value<T>& other) const
+    {
+        return get_data() > other.get_data();
+    }
+
+    bool operator<=(const Value<T>& other) const
+    {
+        return get_data() <= other.get_data();
+    }
+
+    bool operator>=(const Value<T>& other) const
+    {
+        return get_data() >= other.get_data();
+    }
 };
+
+#endif

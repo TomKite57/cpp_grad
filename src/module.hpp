@@ -1,5 +1,6 @@
 
-#pragma once
+#ifndef MODULE_HPP
+#define MODULE_HPP
 
 #include<iostream>
 #include<memory>
@@ -47,8 +48,8 @@ public:
     Neuron(const size_t& size, const bool& non_lin=true): _size{size}, _non_lin{non_lin}
     {
         for (size_t i=0; i<size; ++i)
-            _weights.push_back(Value<T>(get_random_number(static_cast<T>(-1.0), static_cast<T>(1.0))));
-        _bias = Value<T>(get_random_number(static_cast<T>(-1.0), static_cast<T>(1.0)));
+            _weights.push_back(Value<T>(get_random_number(static_cast<T>(-0.05), static_cast<T>(0.05))));
+        _bias = Value<T>(get_random_number(static_cast<T>(-0.05), static_cast<T>(0.05)));
     }
     Neuron(const Neuron& other) { _size = other._size; _weights = other._weights; _bias = other._bias; }
     Neuron(Neuron&& other) { _size = other._size; _weights = std::move(other._weights); _bias = std::move(other._bias); }
@@ -241,3 +242,5 @@ public:
         return rval;
     }
 };
+
+#endif
