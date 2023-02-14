@@ -69,21 +69,30 @@ int main()
     std::cout << "Done!" << std::endl;
 
     std::cout << "Training model..." << std::endl;
-    int batch_size = 10;
-    int num_epochs = 5;
+    int batch_size = 64;
+    int num_epochs = 3;
+    double running_loss = 0.0;
     for (int epoch=0; epoch<num_epochs; ++epoch)
     {
-        for (int i=epoch; i<train_data.size(); i+=batch_size)
+        for (int i=0; i<train_data.size(); ++i)
         {
             auto loss = model.loss(train_data[i], train_labels[i]);
             loss.backward();
-            model.descend_grad();
-            model.zero_grad();
+            running_loss += loss.get_data();
+            if ((i+1) % batch_size == 0 || i+1 == train_data.size())
+            {
+                model.descend_grad(0.0001);
+                model.zero_grad();
+                std::cout << "Loss: " << running_loss / static_cast<double>(batch_size) << std::endl;
+                running_loss = 0.0;
+            }
         }
-        std::cout << "Epoch " << epoch << " complete." << std::endl;
-        std::cout << "Accuracy: " << evaluate_model(model, test_data, test_labels) << std::endl;
+        std::cout << "Epoch " << epoch+1 << "/" << num_epochs << " complete." << std::endl;
     }
     std::cout << "Done!" << std::endl;
+
+    std::cout << "Accuracy: " << evaluate_model(model, test_data, test_labels) << std::endl;
+
 
     return 0;
 }

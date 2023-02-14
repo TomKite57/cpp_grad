@@ -125,8 +125,8 @@ class Value
     {
         auto out = Value(std::pow(val.get_data(), exp), {val.get_ptr(),});
 
-        std::shared_ptr<_Value<T>> val_ptr = val._ptr;
-        std::shared_ptr<_Value<T>> out_ptr = out._ptr;
+        _Value<T>* val_ptr = val.get_ptr().get();
+        _Value<T>* out_ptr = out.get_ptr().get();
 
         auto _back = [=]()
         {
@@ -189,8 +189,8 @@ public:
     {
         auto out = Value<T>(std::max(static_cast<T>(0), get_data()), {get_ptr(),});
 
-        std::shared_ptr<_Value<T>> this_ptr = _ptr;
-        std::shared_ptr<_Value<T>> out_ptr = out._ptr;
+        _Value<T>* this_ptr = get_ptr().get();
+        _Value<T>* out_ptr = out.get_ptr().get();
 
         auto _back = [=]()
         {
@@ -210,9 +210,9 @@ public:
             {get_ptr(), other.get_ptr()}
         );
 
-        std::shared_ptr<_Value<T>> this_ptr = _ptr;
-        std::shared_ptr<_Value<T>> other_ptr = other._ptr;
-        std::shared_ptr<_Value<T>> out_ptr = out._ptr;
+        _Value<T>* this_ptr = get_ptr().get();
+        _Value<T>* other_ptr = other.get_ptr().get();
+        _Value<T>* out_ptr = out.get_ptr().get();
 
         auto _back = [=]()
         {
@@ -236,10 +236,10 @@ public:
             get_data() - other.get_data(),
             {get_ptr(), other.get_ptr()}
         );
-
-        std::shared_ptr<_Value<T>> this_ptr = _ptr;
-        std::shared_ptr<_Value<T>> other_ptr = other._ptr;
-        std::shared_ptr<_Value<T>> out_ptr = out._ptr;
+        
+        _Value<T>* this_ptr = get_ptr().get();
+        _Value<T>* other_ptr = other.get_ptr().get();
+        _Value<T>* out_ptr = out.get_ptr().get();
 
         auto _back = [=]()
         {
@@ -264,9 +264,9 @@ public:
             {get_ptr(), other.get_ptr()}
         );
 
-        std::shared_ptr<_Value<T>> this_ptr = _ptr;
-        std::shared_ptr<_Value<T>> other_ptr = other._ptr;
-        std::shared_ptr<_Value<T>> out_ptr = out._ptr;
+        _Value<T>* this_ptr = get_ptr().get();
+        _Value<T>* other_ptr = other.get_ptr().get();
+        _Value<T>* out_ptr = out.get_ptr().get();
 
         auto _back = [=]()
         {
