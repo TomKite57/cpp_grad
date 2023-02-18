@@ -69,7 +69,7 @@ int main()
     std::cout << "Done!" << std::endl;
 
     std::cout << "Training model..." << std::endl;
-    int batch_size = 64;
+    int batch_size = 50;
     int num_epochs = 3;
     double running_loss = 0.0;
     for (int epoch=0; epoch<num_epochs; ++epoch)
@@ -79,7 +79,7 @@ int main()
             auto loss = model.loss(train_data[i], train_labels[i]);
             loss.backward();
             running_loss += loss.get_data();
-            if ((i+1) % batch_size == 0 || i+1 == train_data.size())
+            if ((i+1) % batch_size == 0)
             {
                 model.descend_grad(0.0001);
                 model.zero_grad();
