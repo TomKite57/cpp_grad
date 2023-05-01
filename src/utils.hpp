@@ -24,13 +24,31 @@ std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
     return os;
 }
 
+// Random seed
 void set_seed()
 {
     srand((unsigned) time(NULL));
 }
 
+// One hot encoding
 template <class T>
-std::vector<std::vector<T>> read_mnist(const std::string& filename)
+std::vector<T> one_hot(T label, size_t size)
+{
+    std::vector<T> vec(size, static_cast<T>(0));
+    vec[static_cast<size_t>(label)] = static_cast<T>(1);
+    return vec;
+}
+
+template <class T>
+std::vector<T> one_hot(std::vector<T> label, size_t size)
+{
+    assert(label.size() == 1);
+    return one_hot(label[0]);
+}
+
+// Reads a file of numbers. Assumes just rows of data of type T
+template <class T>
+std::vector<std::vector<T>> read_file(const std::string& filename)
 {
     std::ifstream file(filename);
 
@@ -55,25 +73,7 @@ std::vector<std::vector<T>> read_mnist(const std::string& filename)
     return data;
 }
 
-template <class T>
-std::vector<T> make_label_vector(T label, size_t size)
-{
-    std::vector<T> vec(size, static_cast<T>(0));
-    vec[static_cast<size_t>(label)] = static_cast<T>(1);
-    return vec;
-}
-
-template <class T>
-std::vector<T> make_label_vector(std::vector<T> label, size_t size)
-{
-    assert(label.size() == 1);
-
-    std::vector<T> vec(size, static_cast<T>(0));
-    vec[static_cast<size_t>(label[0])] = static_cast<T>(1);
-    return vec;
-}
-
-
+// Get the mnist dataset
 template <class T>
 std::tuple<
     std::vector<std::vector<T>>,
@@ -82,10 +82,10 @@ std::tuple<
     std::vector<std::vector<T>>
 > get_mnist_data()
 {
-    std::vector<std::vector<T>> train_images = read_mnist<T>("data/mnist/mnist_train_images.txt");
-    std::vector<std::vector<T>> train_labels = read_mnist<T>("data/mnist/mnist_train_labels.txt");
-    std::vector<std::vector<T>> test_images = read_mnist<T>("data/mnist/mnist_test_images.txt");
-    std::vector<std::vector<T>> test_labels = read_mnist<T>("data/mnist/mnist_test_labels.txt");
+    std::vector<std::vector<T>> train_images = read_file<T>("data/mnist/mnist_train_images.txt");
+    std::vector<std::vector<T>> train_labels = read_file<T>("data/mnist/mnist_train_labels.txt");
+    std::vector<std::vector<T>> test_images = read_file<T>("data/mnist/mnist_test_images.txt");
+    std::vector<std::vector<T>> test_labels = read_file<T>("data/mnist/mnist_test_labels.txt");
 
     for (auto& row : train_images)
         for (auto& val : row)
@@ -94,16 +94,17 @@ std::tuple<
     for (auto& row : test_images)
         for (auto& val : row)
             val = val / static_cast<T>(255) - 0.5;
-    
+
     for (auto& row : train_labels)
-        row = make_label_vector(row[0], 10);
-    
+        row = one_hot(row[0], 10);
+
     for (auto& row : test_labels)
-        row = make_label_vector(row[0], 10);
+        row = one_hot(row[0], 10);
 
     return std::make_tuple(train_images, train_labels, test_images, test_labels);
 }
 
+// Get % correct given test data
 template <class T>
 T evaluate_model(const MLP<T>& model, const std::vector<std::vector<T>>& test_data, const std::vector<std::vector<T>>& test_labels)
 {
