@@ -24,6 +24,21 @@ std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
     return os;
 }
 
+// Array printout
+template <typename T, size_t N>
+std::ostream& operator<<(std::ostream& os, const std::array<T, N>& v)
+{
+    os << "Array(";
+    for (auto ptr=v.begin(); ptr!=v.end(); ++ptr)
+    {
+        os << *ptr;
+        if (ptr != v.end()-1)
+            os << ", ";
+    }
+    os << ")";
+    return os;
+}
+
 // Random seed
 void set_seed()
 {
@@ -104,6 +119,7 @@ std::tuple<
     return std::make_tuple(train_images, train_labels, test_images, test_labels);
 }
 
+/*
 // Get % correct given test data
 template <class T>
 T evaluate_model(const MLP<T>& model, const std::vector<std::vector<T>>& test_data, const std::vector<std::vector<T>>& test_labels)
@@ -121,6 +137,6 @@ T evaluate_model(const MLP<T>& model, const std::vector<std::vector<T>>& test_da
     }
     return correct / static_cast<T>(test_data.size());
 }
-
+*/
 
 #endif

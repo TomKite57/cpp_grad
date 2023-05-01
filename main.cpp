@@ -4,7 +4,7 @@
 #include<tuple>
 
 #include "src/value.hpp"
-#include "src/module.hpp"
+#include "src/new_module.hpp"
 #include "src/utils.hpp"
 
 void sanity_check()
@@ -29,6 +29,7 @@ void sanity_check()
     std::cout << "\n";
 }
 
+/*
 void MLP_test()
 {
     MLP<double> model({5, 5, 5, 5});
@@ -45,7 +46,9 @@ void MLP_test()
         std::cout << "Output: " << model(input) << "\nLoss: " << loss << "\n\n";
     }
 }
+*/
 
+/*
 void mnist_test()
 {
     std::cout << "Loading MNIST data..." << std::endl;
@@ -85,16 +88,24 @@ void mnist_test()
 
     std::cout << "Accuracy: " << evaluate_model(model, test_data, test_labels) << std::endl;
 }
-
-
+*/
 
 int main()
 {
     set_seed();
 
     sanity_check();
-    MLP_test();
+    //MLP_test();
     //mnist_test();
+
+    auto test = Neuron<double, 5>{};
+    std::cout << test({2.0, 3.0, -2.0, 3.0}) << std::endl;
+    std::cout << test.get_parameters() << std::endl;
+
+    auto l1 = Layer<double, 1, 3>{};
+    auto l2 = Layer<double, 3, 1>{};
+
+    std::cout << l2(l1({3.0})) << std::endl;
 
     return 0;
 }
