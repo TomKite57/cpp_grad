@@ -46,16 +46,8 @@ void MLP_test()
     }
 }
 
-
-
-int main()
+void mnist_test()
 {
-    set_seed();
-    
-    //sanity_check();
-
-    //MLP_test();
-
     std::cout << "Loading MNIST data..." << std::endl;
     auto all_data = get_mnist_data<double>();
     auto& train_data = std::get<0>(all_data);
@@ -92,7 +84,17 @@ int main()
     std::cout << "Done!" << std::endl;
 
     std::cout << "Accuracy: " << evaluate_model(model, test_data, test_labels) << std::endl;
+}
 
+
+
+int main()
+{
+    set_seed();
+
+    sanity_check();
+    MLP_test();
+    //mnist_test();
 
     return 0;
 }

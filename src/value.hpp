@@ -20,7 +20,7 @@ template<class T> class Value;
 template <class T>
 class _Value
 {
-    template <class C> friend class Value;
+    friend class Value<T>;
 
     template <class C>
     friend std::ostream& operator<<(std::ostream& os, _Value<C>& val)
@@ -35,13 +35,14 @@ private:
     std::vector<std::shared_ptr<_Value<T>>> _parents;
     std::function<void()> _backward = do_nothing;
 
-public:
     _Value(const T& data, const std::vector<std::shared_ptr<_Value<T>>>& parents):
     _data{data}, _parents{parents}
     {}
 
     // Constructor and destructor
     _Value(const T& data): _data{data} {}
+
+public:
     ~_Value() = default;
 
     // Copy and move constructors
@@ -152,12 +153,15 @@ class Value
 private:
     std::shared_ptr<_Value<T>> _ptr = nullptr;
 
-    Value(const T& data, const std::vector<std::shared_ptr<_Value<T>>>& parents) { _ptr = std::make_shared<_Value<T>>(data, parents); }
+    // Note that here (and below) we use an explicit raw pointer (notice the 'new' keyword)
+    // This is because the std::make_shared function does not have access to the private constructor within _Value
+    // See this post -> https://github.com/isocpp/CppCoreGuidelines/issues/1205
+    Value(const T& data, const std::vector<std::shared_ptr<_Value<T>>>& parents) { _ptr = std::shared_ptr<_Value<T>>( new _Value<T>{data, parents} ); }
 
 public:
     // Constructors and destructors
-    Value() { _ptr = std::make_shared<_Value<T>>(static_cast<T>(0)); }
-    Value(const T& data) { _ptr = std::make_shared<_Value<T>>(data); }
+    Value() { _ptr = std::shared_ptr<_Value<T>>(new _Value<T>{static_cast<T>(0)}); }
+    Value(const T& data) { _ptr = std::shared_ptr<_Value<T>>(new _Value<T>{data}); }
     ~Value() { _ptr = nullptr; };
 
     // Copy and move constructors
@@ -236,7 +240,7 @@ public:
             get_data() - other.get_data(),
             {get_ptr(), other.get_ptr()}
         );
-        
+
         _Value<T>* this_ptr = get_ptr().get();
         _Value<T>* other_ptr = other.get_ptr().get();
         _Value<T>* out_ptr = out.get_ptr().get();
