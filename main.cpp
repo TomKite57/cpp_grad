@@ -99,6 +99,7 @@ int main()
     //mnist_test();
 
     auto test = Neuron<double, 5>{};
+    //auto test = Module<Neuron<double, 5>>{};
     std::cout << test({2.0, 3.0, -2.0, 3.0}) << std::endl;
     std::cout << test.get_parameters() << std::endl;
 

@@ -2,8 +2,19 @@
 #define NEW_MODULE_HPP
 
 #include<iostream>
+#include <tuple>
+#include <utility>
 
 #include "value.hpp"
+
+// template<typename T>
+// concept is_module = requires(T)
+// {
+//     T::type;
+//     T::fan_in;
+//     T::fan_out;
+// };
+
 
 template <class T>
 T get_random_number(const T& min, const T& max)
@@ -12,20 +23,18 @@ T get_random_number(const T& min, const T& max)
 }
 
 // Interface for NN components
-template <class T, size_t fan_in, size_t fan_out>
+template <class D, class T, size_t T_fan_in, size_t T_fan_out>
 class Module
 {
 public:
-    // fan variables for use in class
-    static constexpr size_t _fan_in = fan_in;
-    static constexpr size_t _fan_out = fan_out;
+    using type = T;
+    static constexpr size_t fan_in = T_fan_in;
+    static constexpr size_t fan_out = T_fan_out;
 
-    Module() = default;
-    Module(const Module&) = default;
-    Module(Module&&) = default;
-    virtual ~Module() = default;
-
-    virtual std::vector<std::shared_ptr<Value<T>>> get_parameters() const = 0;
+    std::vector<std::shared_ptr<Value<T>>> get_parameters() const
+    {
+        return static_cast<const D*>(this)->get_parameters_impl();
+    };
 
     void zero_grad()
     {
@@ -33,15 +42,19 @@ public:
             node->zero_grad();
     }
 
-    virtual std::array<Value<T>, fan_out> operator()(const std::array<Value<T>, fan_in>&) const = 0;
+    std::array<Value<T>, fan_out> operator()(const std::array<Value<T>, fan_in>& input) const
+    {
+        return static_cast<const D*>(this)->operator_impl(input);
+    };
 };
 
-template <class T, size_t fan_in>
-class Neuron: public Module<T, fan_in, 1>
+
+template <class T, size_t T_fan_in>
+class Neuron: public Module<Neuron<T, T_fan_in>, T, T_fan_in, 1>
 {
 private:
     bool _non_lin;
-    std::array<Value<T>, fan_in> _weights{};
+    std::array<Value<T>, T_fan_in> _weights{};
     Value<T> _bias{static_cast<T>(0)};
 
 public:
@@ -49,10 +62,10 @@ public:
     {
         constexpr T max = static_cast<T>(1);
         constexpr T min = static_cast<T>(-1);
-        for (size_t i=0; i<fan_in; ++i)
+        for (size_t i=0; i<T_fan_in; ++i)
         {
             // TODO Check Andrej's video for correct coefficient
-            _weights[i] = Value<T>(get_random_number(min, max)/static_cast<T>(fan_in));
+            _weights[i] = Value<T>(get_random_number(min, max)/static_cast<T>(T_fan_in));
         }
         _bias = Value<T>(get_random_number(static_cast<T>(-1), static_cast<T>(1)));
     }
@@ -62,7 +75,7 @@ public:
     Neuron& operator=(Neuron&& other) { _weights = std::move(other._weights); _bias = std::move(other._bias); return *this; }
     ~Neuron() {}
 
-    std::vector<std::shared_ptr<Value<T>>> get_parameters() const
+    std::vector<std::shared_ptr<Value<T>>> get_parameters_impl() const
     {
         std::vector<std::shared_ptr<Value<T>>> rval = {std::make_shared<Value<T>>(_bias)};
         for (auto& w : _weights)
@@ -70,11 +83,11 @@ public:
         return rval;
     }
 
-    std::array<Value<T>, 1> operator()(const std::array<Value<T>, fan_in>& input) const
+    std::array<Value<T>, 1> operator_impl(const std::array<Value<T>, T_fan_in>& input) const
     {
         std::array<Value<T>, 1> rval{_bias};
 
-        for (size_t i=0; i<fan_in; ++i)
+        for (size_t i=0; i<T_fan_in; ++i)
         {
             auto new_temp = input[i] * _weights[i];
             rval[0] = rval[0] + new_temp;
@@ -83,19 +96,18 @@ public:
     }
 };
 
-
-template <class T, size_t fan_in, size_t fan_out>
-class Layer: public Module<T, fan_in, fan_out>
+template <class T, size_t T_fan_in, size_t T_fan_out>
+class Layer: public Module<Layer<T, T_fan_in, T_fan_out>, T, T_fan_in, T_fan_out>
 {
 private:
-    std::array<Neuron<T, fan_in>, fan_out> _neurons{};
+    std::array<Neuron<T, T_fan_in>, T_fan_out> _neurons{};
 
 public:
     Layer()
     {
         // Might not be necessary, unless passing more params
-        for (size_t i=0; i<fan_out; ++i)
-            _neurons[i] = Neuron<T, fan_in>{};
+        for (size_t i=0; i<T_fan_out; ++i)
+            _neurons[i] = Neuron<T, T_fan_in>{};
     }
     Layer(const Layer& other)
     {
@@ -118,20 +130,16 @@ public:
         return rval;
     }
 
-    std::array<Value<T>, fan_out> operator()(const std::array<Value<T>, fan_in>& input) const
+    std::array<Value<T>, T_fan_out> operator()(const std::array<Value<T>, T_fan_in>& input) const
     {
-        std::array<Value<T>, fan_out> rval;
-        for (size_t i{0}; i<fan_out; ++i)
+        std::array<Value<T>, T_fan_out> rval;
+        for (size_t i{0}; i<T_fan_out; ++i)
             rval[i] = _neurons[i](input)[0];
         return rval;
     }
 };
 
-template <class T, size_t fan_in_1, size_t fan_out_1, size_t fan_in_2, size_t fan_out_2>
-constexpr bool are_compatible_layers(const Layer<T, fan_in_1, fan_out_1>& l1, const Layer<T, fan_in_2, fan_out_2>& l2) {
-    return fan_out_1 == fan_in_2;
-}
-
+/*
 template <class... Args>
 class Pipeline;
 
@@ -168,6 +176,7 @@ public:
 private:
     std::tuple<Args...> layers;
 };
+*/
 
 /*
 template <class T, size_t... sizes>
