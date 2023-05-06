@@ -1,5 +1,5 @@
 all:
-	g++ -std=c++20 -O3 main.cpp -o cpp_grad.o
+	g++ -std=c++17 main.cpp -o cpp_grad.o
 
 clean:
 	rm -r *.o

@@ -98,15 +98,22 @@ int main()
     //MLP_test();
     //mnist_test();
 
-    auto test = Neuron<double, 5>{};
-    //auto test = Module<Neuron<double, 5>>{};
-    std::cout << test({2.0, 3.0, -2.0, 3.0}) << std::endl;
-    std::cout << test.get_parameters() << std::endl;
+    //auto test = Neuron<double, 5>{};
+    //std::cout << test({2.0, 3.0, -2.0, 3.0}) << std::endl;
+    //std::cout << test.get_parameters() << std::endl;
 
     auto l1 = Layer<double, 1, 3>{};
-    auto l2 = Layer<double, 3, 1>{};
+    std::cout << l1.get_parameters() << std::endl;
 
+    auto l2 = Layer<double, 3, 1>{};
+    std::cout << l2.get_parameters() << std::endl;
+
+    //auto m = Module<decltype(l1), decltype(l2)>(l1, l2);
+//
+    //std::cout << m.get_parameters() << std::endl;
+//
     std::cout << l2(l1({3.0})) << std::endl;
+    //std::cout << m({3.0}) << std::endl;
 
     return 0;
 }

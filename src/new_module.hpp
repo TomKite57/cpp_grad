@@ -24,13 +24,14 @@ T get_random_number(const T& min, const T& max)
 
 // Interface for NN components
 template <class D, class T, size_t T_fan_in, size_t T_fan_out>
-class Module
+class ModuleBase
 {
 public:
-    using type = T;
-    static constexpr size_t fan_in = T_fan_in;
-    static constexpr size_t fan_out = T_fan_out;
+    using _T = T;
+    static constexpr size_t _T_fan_in   = T_fan_in;
+    static constexpr size_t _T_fan_out  = T_fan_out;
 
+public:
     std::vector<std::shared_ptr<Value<T>>> get_parameters() const
     {
         return static_cast<const D*>(this)->get_parameters_impl();
@@ -42,7 +43,7 @@ public:
             node->zero_grad();
     }
 
-    std::array<Value<T>, fan_out> operator()(const std::array<Value<T>, fan_in>& input) const
+    std::array<Value<_T>, _T_fan_out> operator()(const std::array<Value<_T>, _T_fan_in>& input) const
     {
         return static_cast<const D*>(this)->operator_impl(input);
     };
@@ -50,8 +51,13 @@ public:
 
 
 template <class T, size_t T_fan_in>
-class Neuron: public Module<Neuron<T, T_fan_in>, T, T_fan_in, 1>
+class Neuron: public ModuleBase<Neuron<T, T_fan_in>, T, T_fan_in, 1>
 {
+public:
+    using _T = T;
+    static constexpr size_t _T_fan_in   = T_fan_in;
+    static constexpr size_t _T_fan_out  = 1;
+
 private:
     bool _non_lin;
     std::array<Value<T>, T_fan_in> _weights{};
@@ -97,8 +103,13 @@ public:
 };
 
 template <class T, size_t T_fan_in, size_t T_fan_out>
-class Layer: public Module<Layer<T, T_fan_in, T_fan_out>, T, T_fan_in, T_fan_out>
+class Layer: public ModuleBase<Layer<T, T_fan_in, T_fan_out>, T, T_fan_in, T_fan_out>
 {
+public:
+    using _T = T;
+    static constexpr size_t _T_fan_in   = T_fan_in;
+    static constexpr size_t _T_fan_out  = T_fan_out;
+
 private:
     std::array<Neuron<T, T_fan_in>, T_fan_out> _neurons{};
 
@@ -109,17 +120,11 @@ public:
         for (size_t i=0; i<T_fan_out; ++i)
             _neurons[i] = Neuron<T, T_fan_in>{};
     }
-    Layer(const Layer& other)
-    {
-        _neurons = other._neurons;
-    }
-    Layer(Layer&& other)
-    {
-        _neurons = std::move(other._neurons);
-    }
+    Layer(const Layer& other) = delete;
+    Layer(Layer&& other) = delete;
     ~Layer() { };
 
-    std::vector<std::shared_ptr<Value<T>>> get_parameters() const
+    std::vector<std::shared_ptr<Value<T>>> get_parameters_impl() const
     {
         std::vector<std::shared_ptr<Value<T>>> rval;
         for (auto& n : _neurons)
@@ -130,12 +135,71 @@ public:
         return rval;
     }
 
-    std::array<Value<T>, T_fan_out> operator()(const std::array<Value<T>, T_fan_in>& input) const
+    std::array<Value<T>, T_fan_out> operator_impl(const std::array<Value<T>, T_fan_in>& input) const
     {
         std::array<Value<T>, T_fan_out> rval;
         for (size_t i{0}; i<T_fan_out; ++i)
             rval[i] = _neurons[i](input)[0];
         return rval;
+    }
+};
+
+
+template<class A, class... Rest>
+class Module: public ModuleBase<Module<A, Rest...>, typename A::_T, A::_T_fan_in, Module<Rest...>::_T_fan_out>
+{
+public:
+    using _T = typename A::_T;
+    static constexpr size_t _T_fan_in   = A::_T_fan_in;
+    static constexpr size_t _T_fan_out  = Module<Rest...>::_T_fan_out;
+
+public:
+    const A& _a;
+    const Module<Rest...>& _b;
+
+    Module(const A& a, const Module<Rest...>& b): _a{a}, _b{b} {};
+    Module(const Module& other) = delete;
+    Module(Module&& other) = delete;
+    ~Module(){};
+
+    std::vector<std::shared_ptr<Value<_T>>> get_parameters_impl() const
+    {
+        std::vector<std::shared_ptr<Value<_T>>> rval = _a.get_parameters();
+        std::vector<std::shared_ptr<Value<_T>>> b_params = _b.get_parameters();
+        rval.insert(rval.end(), b_params.begin(), b_params.end());
+        return rval;
+    }
+
+    std::array<Value<_T>, _T_fan_out> operator_impl(const std::array<Value<_T>, _T_fan_in>& input) const
+    {
+        return _b(_a(input));
+    }
+};
+
+template<class A>
+class Module<A>: public ModuleBase<Module<A>, typename A::_T, A::_T_fan_in, A::_T_fan_out>
+{
+public:
+    using _T = typename A::_T;
+    static constexpr size_t _T_fan_in   = A::_T_fan_in;
+    static constexpr size_t _T_fan_out  = A::_T_fan_out;
+
+public:
+    const A& _a;
+
+    Module(const A& a): _a{a} {};
+    Module(const Module& other) = delete;
+    Module(Module&& other) = delete;
+    ~Module(){};
+
+    std::vector<std::shared_ptr<Value<_T>>> get_parameters_impl() const
+    {
+        return _a.get_parameters();
+    }
+
+    std::array<Value<_T>, _T_fan_out> operator_impl(const std::array<Value<_T>, _T_fan_in>& input) const
+    {
+        return _a(input);
     }
 };
 
