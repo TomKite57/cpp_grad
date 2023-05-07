@@ -32,6 +32,13 @@ public:
     static constexpr size_t _T_fan_out  = T_fan_out;
 
 public:
+    ModuleBase() = default;
+    ModuleBase(const ModuleBase&) = default;
+    ModuleBase(ModuleBase&&) = default;
+    ModuleBase& operator=(const ModuleBase&) = default;
+    ModuleBase& operator=(ModuleBase&&) = default;
+    ~ModuleBase() = default;
+
     std::vector<std::shared_ptr<Value<T>>> get_parameters() const
     {
         return static_cast<const D*>(this)->get_parameters_impl();
@@ -111,22 +118,25 @@ public:
     static constexpr size_t _T_fan_out  = T_fan_out;
 
 private:
-    std::array<Neuron<T, T_fan_in>, T_fan_out> _neurons{};
+    std::array<Neuron<_T, _T_fan_in>, _T_fan_out> _neurons{};
 
 public:
     Layer()
     {
+        std::cout << "Constructing Layer" << std::endl;
         // Might not be necessary, unless passing more params
-        for (size_t i=0; i<T_fan_out; ++i)
-            _neurons[i] = Neuron<T, T_fan_in>{};
+        //for (size_t i=0; i<_T_fan_out; ++i)
+        //    _neurons[i] = Neuron<_T, _T_fan_in>{};
     }
-    Layer(const Layer& other) = delete;
-    Layer(Layer&& other) = delete;
+    Layer(const Layer& other) { _neurons = other._neurons; };
+    Layer(Layer&& other) { _neurons = std::move(other._neurons); };
+    Layer& operator=(const Layer& other) { if (&other != this) _neurons = other._neurons; return *this; }
+    Layer& operator=(Layer&& other) { _neurons = std::move(other._neurons); return *this; }
     ~Layer() { };
 
-    std::vector<std::shared_ptr<Value<T>>> get_parameters_impl() const
+    std::vector<std::shared_ptr<Value<_T>>> get_parameters_impl() const
     {
-        std::vector<std::shared_ptr<Value<T>>> rval;
+        std::vector<std::shared_ptr<Value<_T>>> rval;
         for (auto& n : _neurons)
         {
             auto temp = n.get_parameters();
@@ -135,11 +145,13 @@ public:
         return rval;
     }
 
-    std::array<Value<T>, T_fan_out> operator_impl(const std::array<Value<T>, T_fan_in>& input) const
+    std::array<Value<_T>, _T_fan_out> operator_impl(const std::array<Value<_T>, _T_fan_in>& input) const
     {
-        std::array<Value<T>, T_fan_out> rval;
-        for (size_t i{0}; i<T_fan_out; ++i)
+        std::array<Value<_T>, _T_fan_out> rval;
+        for (size_t i{0}; i<_T_fan_out; ++i)
+        {
             rval[i] = _neurons[i](input)[0];
+        }
         return rval;
     }
 };
@@ -154,12 +166,15 @@ public:
     static constexpr size_t _T_fan_out  = Module<Rest...>::_T_fan_out;
 
 public:
-    const A& _a;
-    const Module<Rest...>& _b;
+    const A _a;
+    const Module<Rest...> _b;
 
+    Module() = delete;
     Module(const A& a, const Module<Rest...>& b): _a{a}, _b{b} {};
-    Module(const Module& other) = delete;
-    Module(Module&& other) = delete;
+    Module(const Module& other) = default;
+    Module(Module&& other) = default;
+    Module& operator=(const Module& other) = default;
+    Module& operator=(Module&& other) = default;
     ~Module(){};
 
     std::vector<std::shared_ptr<Value<_T>>> get_parameters_impl() const
@@ -172,7 +187,14 @@ public:
 
     std::array<Value<_T>, _T_fan_out> operator_impl(const std::array<Value<_T>, _T_fan_in>& input) const
     {
-        return _b(_a(input));
+        auto rval = _b(_a(input));
+        return rval;
+    }
+
+    std::array<Value<_T>, _T_fan_out> operator_impl(const std::array<Value<_T>, _T_fan_in>&& input) const
+    {
+        auto rval = _b(_a(input));
+        return rval;
     }
 };
 
@@ -185,11 +207,14 @@ public:
     static constexpr size_t _T_fan_out  = A::_T_fan_out;
 
 public:
-    const A& _a;
+    const A _a;
 
+    Module() = delete;
     Module(const A& a): _a{a} {};
-    Module(const Module& other) = delete;
-    Module(Module&& other) = delete;
+    Module(const Module& other) = default;
+    Module(Module&& other) = default;
+    Module& operator=(const Module& other) = default;
+    Module& operator=(Module&& other) = default;
     ~Module(){};
 
     std::vector<std::shared_ptr<Value<_T>>> get_parameters_impl() const
@@ -199,140 +224,16 @@ public:
 
     std::array<Value<_T>, _T_fan_out> operator_impl(const std::array<Value<_T>, _T_fan_in>& input) const
     {
-        return _a(input);
-    }
-};
-
-/*
-template <class... Args>
-class Pipeline;
-
-template <class T, size_t fan_in, size_t fan_out, class... Args>
-class Pipeline<Layer<T, fan_in, fan_out>, Args...> {
-public:
-    static constexpr size_t input_size = fan_in;
-    static constexpr size_t output_size = Layer<T, fan_in, fan_out>::fan_out;
-
-    static_assert(are_compatible_layers(std::declval<Layer<T, fan_in, fan_out>>(), std::declval<typename Pipeline<Args...>::head>()), "Layers are not compatible");
-
-    using head = Layer<T, fan_in, fan_out>;
-    using tail = Pipeline<Args...>;
-};
-
-template <>
-class Pipeline<> {
-public:
-    static constexpr size_t input_size = 0;
-    static constexpr size_t output_size = 0;
-
-    using head = void;
-    using tail = void;
-};
-
-template <class... Args>
-class Pipeline {
-public:
-    Pipeline(Args... args)
-        : layers(args...) {};
-
-    // Other functions and member variables...
-
-private:
-    std::tuple<Args...> layers;
-};
-*/
-
-/*
-template <class T, size_t... sizes>
-class my_class: public Module<T, std::get<0>(std::make_tuple(sizes...)), std::get<sizeof...(sizes)-1>(std::make_tuple(sizes...))>
-{
-private:
-    std::vector<Layer<T>> _layers;
-
-public:
-    MLP(const std::vector<size_t>& sizes)
-    {
-        for (size_t i=0; i<sizes.size()-1; ++i)
-            _layers.push_back(Layer<T>(sizes[i], sizes[i+1]));
-    }
-    MLP(const MLP&) = delete;
-    MLP(MLP&&) = delete;
-    ~MLP() { _layers.clear(); }
-
-    std::vector<std::shared_ptr<Value<T>>> get_parameters() const
-    {
-        std::vector<std::shared_ptr<Value<T>>> rval;
-        for (auto& l : _layers)
-        {
-            auto temp = l.get_parameters();
-            rval.insert(rval.end(), temp.begin(), temp.end());
-        }
+        auto rval = _a(input);
         return rval;
     }
 
-    void descend_grad(const T& learning_rate=static_cast<T>(0.01))
+    std::array<Value<_T>, _T_fan_out> operator_impl(const std::array<Value<_T>, _T_fan_in>&& input) const
     {
-        for (const auto& p : get_parameters())
-            p->descend_grad(learning_rate);
-    }
-
-    void zero_grad()
-    {
-        for (const auto& p : get_parameters())
-            p->zero_grad();
-    }
-
-    std::vector<Value<T>> operator()(const std::vector<Value<T>>& input) const
-    {
-        std::vector<Value<T>> rval = input;
-        for (auto& l : _layers)
-            rval = l(rval);
-        return rval;
-    }
-
-    std::vector<Value<T>> operator()(const std::vector<T>& input) const
-    {
-        std::vector<Value<T>> rval;
-
-        for (auto& i : input)
-            rval.push_back(Value<T>(i));
-
-        for (auto& l : _layers)
-            rval = l(rval);
-        return rval;
-    }
-
-    Value<T> loss(const std::vector<T>& input, const std::vector<T>& target) const
-    {
-        auto output = operator()(input);
-
-        Value<T> rval = Value<T>(static_cast<T>(0));
-        for (size_t i=0; i<output.size(); ++i)
-        {
-            auto target_value = Value<T>(target[i]);
-            auto diff = output[i] - target_value;
-            auto temp_loss = pow(diff, static_cast<T>(2));
-            rval = rval + temp_loss;
-        }
-        return rval;
-    }
-
-    Value<T> loss(const std::vector<Value<T>>& input, const std::vector<T>& target) const
-    {
-        std::vector<Value<T>> output = operator()(input);
-
-        Value<T> rval(static_cast<T>(0));
-        for (size_t i=0; i<output.size(); ++i)
-        {
-            auto target_value = Value<T>(target[i]);
-            auto diff = output[i] - target_value;
-            auto temp_loss = pow(diff, static_cast<T>(2));
-            rval = rval + temp_loss;
-        }
+        auto rval = _a(input);
         return rval;
     }
 };
-*/
 
 
 #endif

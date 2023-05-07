@@ -108,12 +108,12 @@ int main()
     auto l2 = Layer<double, 3, 1>{};
     std::cout << l2.get_parameters() << std::endl;
 
-    //auto m = Module<decltype(l1), decltype(l2)>(l1, l2);
-//
-    //std::cout << m.get_parameters() << std::endl;
-//
+    auto m = Module<decltype(l1), decltype(l2)>(l1, l2);
+
+    std::cout << m.get_parameters() << std::endl;
+
     std::cout << l2(l1({3.0})) << std::endl;
-    //std::cout << m({3.0}) << std::endl;
+    std::cout << m({3.0}) << std::endl;
 
     return 0;
 }
