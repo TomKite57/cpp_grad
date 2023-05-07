@@ -115,5 +115,18 @@ int main()
     std::cout << l2(l1({3.0})) << std::endl;
     std::cout << m({3.0}) << std::endl;
 
+    for (int i=0; i<25; ++i)
+    {
+        auto val = m({3.0})[0];
+        val = val*val;
+        val.backward();
+        for (auto v : val.build_topo())
+            v->descend_grad(0.01);
+        val.zero_grad_all();
+        std::cout << m({3.0}) << std::endl << std::endl;
+    }
+
+    std::cout << l2(l1({3.0})) << std::endl;
+
     return 0;
 }

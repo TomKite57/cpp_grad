@@ -82,8 +82,8 @@ public:
         }
         _bias = Value<T>(get_random_number(static_cast<T>(-1), static_cast<T>(1)));
     }
-    Neuron(const Neuron& other) { _weights = other._weights; _bias = other._bias; }
-    Neuron(Neuron&& other) { _weights = std::move(other._weights); _bias = std::move(other._bias); }
+    Neuron(const Neuron& other): _weights{other._weights}, _bias{other._bias} {}
+    Neuron(Neuron&& other): _weights{std::move(other._weights)}, _bias{std::move(other._bias)} {}
     Neuron& operator=(const Neuron& other) { _weights = other._weights; _bias = other._bias; return *this; }
     Neuron& operator=(Neuron&& other) { _weights = std::move(other._weights); _bias = std::move(other._bias); return *this; }
     ~Neuron() {}
@@ -123,7 +123,6 @@ private:
 public:
     Layer()
     {
-        std::cout << "Constructing Layer" << std::endl;
         // Might not be necessary, unless passing more params
         //for (size_t i=0; i<_T_fan_out; ++i)
         //    _neurons[i] = Neuron<_T, _T_fan_in>{};
@@ -170,11 +169,12 @@ public:
     const Module<Rest...> _b;
 
     Module() = delete;
-    Module(const A& a, const Module<Rest...>& b): _a{a}, _b{b} {};
-    Module(const Module& other) = default;
-    Module(Module&& other) = default;
-    Module& operator=(const Module& other) = default;
-    Module& operator=(Module&& other) = default;
+    Module(const A& a, const Module<Rest...>& b): _a{a}, _b{b} {}
+    Module(const A&& a, const Module<Rest...>&& b): _a{a}, _b{b} {}
+    Module(const Module& other): _a{other._a}, _b{other._b} {}
+    Module(Module&& other): _a{std::move(other._a)}, _b{std::move(other._b)} {}
+    Module& operator=(const Module& other) { if (*this == other) return *this; _a = other._a; _b = other._b; return *this; }
+    Module& operator=(Module&& other) { _a = std::move(other._a); _b = std::move(other._b); return *this; }
     ~Module(){};
 
     std::vector<std::shared_ptr<Value<_T>>> get_parameters_impl() const
@@ -211,10 +211,11 @@ public:
 
     Module() = delete;
     Module(const A& a): _a{a} {};
-    Module(const Module& other) = default;
-    Module(Module&& other) = default;
-    Module& operator=(const Module& other) = default;
-    Module& operator=(Module&& other) = default;
+    Module(const A&& a): _a{a} {};
+    Module(const Module& other): _a{other._a} {};
+    Module(Module&& other): _a{std::move(other._a)} {};
+    Module& operator=(const Module& other) { if (*this != other) _a = other._a; return *this; };
+    Module& operator=(Module&& other) { _a = std::move(other._a); return *this; };
     ~Module(){};
 
     std::vector<std::shared_ptr<Value<_T>>> get_parameters_impl() const
