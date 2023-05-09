@@ -84,7 +84,7 @@ public:
                 return;
 
             visited.insert(node);
-            for (auto& par_ptr : node->get_parent_ptrs())
+            for (const auto& par_ptr : node->get_parent_ptrs())
                 _build_topo(par_ptr.get(), visited, order);
             order.push_back(node);
         };
@@ -165,12 +165,12 @@ public:
     ~Value() { _ptr = nullptr; };
 
     // Copy and move constructors
-    Value(const Value& other) { _ptr = other._ptr; }
-    Value(Value&& other) { _ptr = other._ptr; other._ptr = nullptr; }
+    Value(const Value& other) { _ptr = other._ptr;}
+    Value(Value&& other) { _ptr = other._ptr; other._ptr = nullptr;}
 
     // Copy and move assignment operators
-    Value<T>& operator=(const Value<T>& other) { if (&other!=this) _ptr = other._ptr; return *this; }
-    Value<T>& operator=(Value<T>&& other) { _ptr = other._ptr; other._ptr = nullptr; return *this; }
+    Value<T>& operator=(const Value<T>& other) { if (&other!=this) _ptr = other._ptr; return *this;}
+    Value<T>& operator=(Value<T>&& other) { _ptr = other._ptr; other._ptr = nullptr; return *this;}
 
     // Transparency to the _Value class
     const T& get_data() const { return _ptr->get_data(); }

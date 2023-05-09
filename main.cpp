@@ -4,7 +4,8 @@
 #include<tuple>
 
 #include "src/value.hpp"
-#include "src/new_module.hpp"
+#include "src/module.hpp"
+#include "src/static_module.hpp"
 #include "src/utils.hpp"
 
 void sanity_check()
@@ -29,24 +30,59 @@ void sanity_check()
     std::cout << "\n";
 }
 
-/*
-void MLP_test()
+void MLP_test(size_t iter)
 {
     MLP<double> model({5, 5, 5, 5});
 
     std::vector<double> input = {4.7, 5.0, 5.2, 5.4, 5.6};
     std::vector<double> target = {1, 0, 0, 0, 0};
 
-    for (size_t i=0; i<50; ++i)
+    for (size_t i=0; i<iter; ++i)
     {
         auto loss = model.loss(input, target);
         loss.backward();
-        model.descend_grad();
-        model.zero_grad();
-        std::cout << "Output: " << model(input) << "\nLoss: " << loss << "\n\n";
+
+        if (i%(iter/100)==0)
+        {
+            model.descend_grad(0.00001);
+            model.zero_grad();
+        }
+
+        if (i%(iter/5)==0)
+            std::cout << "Output: " << model(input) << "\nLoss: " << loss << "\n";
     }
 }
-*/
+
+void static_MLP_test(size_t iter)
+{
+    constexpr size_t size = 5;
+    using l = StaticLayer<double, size, size>;
+    StaticModule<l, l, l, l> model{};
+
+    std::array<Value<double>, size> input = {4.7, 5.0, 5.2, 5.4, 5.6};
+    std::array<Value<double>, size> target = {1, 0, 0, 0, 0};
+
+    for (size_t i=0; i<iter; ++i)
+    {
+        auto fw = model(input);
+        Value<double> loss{0.0};
+        for (size_t i{0}; i<fw.size(); ++i)
+            loss = loss + pow(fw[i] - target[i], 2.0);
+        loss.backward();
+
+        if (i%(iter/100)==0)
+        {
+            for (const auto& v : model.get_parameters())
+            {
+                v->descend_grad(0.00001);
+                v->zero_grad();
+            }
+        }
+
+        if (i%(iter/5)==0)
+            std::cout << "Output: " << model(input) << "\nLoss: " << loss << "\n";
+    }
+}
 
 /*
 void mnist_test()
@@ -92,41 +128,40 @@ void mnist_test()
 
 int main()
 {
-    set_seed();
+    //set_seed();
 
-    sanity_check();
-    //MLP_test();
+    //sanity_check();
+
+    MLP_test(100'000);
+    //static_MLP_test(100'000);
     //mnist_test();
 
     //auto test = Neuron<double, 5>{};
     //std::cout << test({2.0, 3.0, -2.0, 3.0}) << std::endl;
     //std::cout << test.get_parameters() << std::endl;
 
-    auto l1 = Layer<double, 1, 3>{};
-    std::cout << l1.get_parameters() << std::endl;
+    // auto l1 = StaticLayer<double, 1, 3>{};
+    // std::cout << l1.get_parameters() << std::endl;
 
-    auto l2 = Layer<double, 3, 1>{};
-    std::cout << l2.get_parameters() << std::endl;
+    // auto l2 = StaticLayer<double, 3, 1>{};
+    // std::cout << l2.get_parameters() << std::endl;
 
-    auto m = Module<decltype(l1), decltype(l2)>(l1, l2);
+    // auto m = StaticModule<decltype(l1), decltype(l2)>(std::move(l1), std::move(l2));
 
-    std::cout << m.get_parameters() << std::endl;
+    // std::cout << m.get_parameters() << std::endl;
 
-    std::cout << l2(l1({3.0})) << std::endl;
-    std::cout << m({3.0}) << std::endl;
+    // std::cout << m({3.0}) << std::endl;
 
-    for (int i=0; i<25; ++i)
-    {
-        auto val = m({3.0})[0];
-        val = val*val;
-        val.backward();
-        for (auto v : val.build_topo())
-            v->descend_grad(0.01);
-        val.zero_grad_all();
-        std::cout << m({3.0}) << std::endl << std::endl;
-    }
-
-    std::cout << l2(l1({3.0})) << std::endl;
+    // for (int i=0; i<25; ++i)
+    // {
+    //     auto val = m({3.0})[0];
+    //     val = val*val;
+    //     val.backward();
+    //     for (auto v : val.build_topo())
+    //         v->descend_grad(0.01);
+    //     val.zero_grad_all();
+    //     std::cout << m({3.0}) << std::endl << std::endl;
+    // }
 
     return 0;
 }

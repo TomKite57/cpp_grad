@@ -9,6 +9,13 @@
 #include<cstdlib>
 #include<tuple>
 
+// Random numbers
+template <class T>
+T get_random_number(const T& min, const T& max)
+{
+    return static_cast<T>(rand()) / static_cast<T>(RAND_MAX) * (max - min) + min;
+}
+
 // Vector printout
 template <typename T>
 std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)

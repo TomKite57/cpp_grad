@@ -5,26 +5,21 @@
 #include<iostream>
 #include<memory>
 #include<vector>
-#include<assert.h> 
+#include<assert.h>
 #include<cstdlib>
 
 #include "value.hpp"
-
-template <class T>
-T get_random_number(const T& min, const T& max)
-{
-    return static_cast<T>(rand()) / static_cast<T>(RAND_MAX) * (max - min) + min;
-}
+#include "utils.hpp"
 
 // Interface for NN components
 template <class T>
-class Module
+class ModuleBase
 {
 public:
-    Module() = default;
-    Module(const Module&) = default;
-    Module(Module&&) = default;
-    virtual ~Module() = default;
+    ModuleBase() = default;
+    ModuleBase(const ModuleBase&) = default;
+    ModuleBase(ModuleBase&&) = default;
+    virtual ~ModuleBase() = default;
 
     virtual std::vector<std::shared_ptr<Value<T>>> get_parameters() const = 0;
 
@@ -36,7 +31,7 @@ public:
 };
 
 template <class T>
-class Neuron: public Module<T>
+class Neuron: public ModuleBase<T>
 {
 private:
     size_t _size;
@@ -100,7 +95,7 @@ public:
 
 
 template <class T>
-class Layer: public Module<T>
+class Layer: public ModuleBase<T>
 {
 private:
     size_t _size_in, _size_out;
@@ -158,7 +153,7 @@ public:
 };
 
 template <class T>
-class MLP: public Module<T>
+class MLP: public ModuleBase<T>
 {
 private:
     std::vector<Layer<T>> _layers;
@@ -207,7 +202,7 @@ public:
     std::vector<Value<T>> operator()(const std::vector<T>& input) const
     {
         std::vector<Value<T>> rval;
-        
+
         for (auto& i : input)
             rval.push_back(Value<T>(i));
 
